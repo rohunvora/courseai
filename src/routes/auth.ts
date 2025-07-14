@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { supabase } from '../lib/supabase.js';
+import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 import { logger } from '../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -23,13 +23,25 @@ export async function authRoutes(fastify: FastifyInstance) {
   }>('/auth/signup', async (request, reply) => {
     const requestId = uuidv4();
     
+    if (!isSupabaseConfigured()) {
+      logger.warn('auth', 'signup_disabled', requestId, { reason: 'supabase_not_configured' });
+      return reply.status(501).send({
+        success: false,
+        error: {
+          code: 'AUTH_DISABLED',
+          message: 'Authentication is not configured. Please set up Supabase environment variables.',
+        },
+        meta: { requestId, timestamp: new Date() },
+      });
+    }
+    
     try {
       const { email, password, firstName, lastName } = request.body;
       
       logger.info('auth', 'signup_attempt', requestId, { email });
 
       // Create user with Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await supabase!.auth.signUp({
         email,
         password,
         options: {
@@ -99,13 +111,21 @@ export async function authRoutes(fastify: FastifyInstance) {
   }>('/auth/login', async (request, reply) => {
     const requestId = uuidv4();
     
+    if (!isSupabaseConfigured()) {
+      return reply.status(501).send({
+        success: false,
+        error: { code: 'AUTH_DISABLED', message: 'Authentication not configured.' },
+        meta: { requestId, timestamp: new Date() },
+      });
+    }
+    
     try {
       const { email, password } = request.body;
       
       logger.info('auth', 'login_attempt', requestId, { email });
 
       // Sign in with Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase!.auth.signInWithPassword({
         email,
         password,
       });
@@ -185,7 +205,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       logger.info('auth', 'logout_attempt', requestId);
 
       // Sign out from Supabase
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase!.auth.signOut();
 
       if (error) {
         logger.error('auth', 'logout_failed', requestId, { error: error.message });
@@ -243,7 +263,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Get user from token
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+      const { data: { user }, error } = await supabase!.auth.getUser(token);
 
       if (error || !user) {
         logger.warn('auth', 'get_user_failed', requestId, { 

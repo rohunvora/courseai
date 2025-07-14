@@ -82,7 +82,7 @@ const start = async () => {
     });
 
     const port = parseInt(process.env.PORT || '3000');
-    const host = process.env.HOST || 'localhost';
+    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : (process.env.HOST || 'localhost');
     
     await fastify.listen({ port, host });
     

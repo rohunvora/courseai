@@ -1,13 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
+// Only create client if we have the required config
+let supabase: ReturnType<typeof createClient> | null = null;
+
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+} else {
+  console.warn('Supabase configuration missing. Authentication features will be disabled.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export { supabase };
+
+// Helper to check if Supabase is configured
+export const isSupabaseConfigured = () => {
+  return supabase !== null;
+};
 
 // Database types for better TypeScript support
 export interface Database {
