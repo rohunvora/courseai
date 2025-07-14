@@ -1,6 +1,10 @@
+/* CourseAI Application Styles */
+
 h1 {
   color: #2c3e50;
   margin-bottom: 10px;
   font-size: 28px;
   font-weight: 600;
 }
+
+/* Additional app-wide styles can be added here */

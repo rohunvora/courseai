@@ -1,0 +1,68 @@
+
+> courseai-backend@0.1.0 dev
+> tsx watch src/index.ts
+
+Supabase configuration missing. Authentication features will be disabled.
+{"level":30,"time":1752530835856,"pid":70981,"hostname":"Mac","msg":"Server listening at http://[::1]:3000"}
+{"level":30,"time":1752530835857,"pid":70981,"hostname":"Mac","msg":"Server listening at http://127.0.0.1:3000"}
+🚀 Courses AI backend running on http://localhost:3000
+📋 Health check: http://localhost:3000/health
+🧪 Test endpoint: http://localhost:3000/api/test
+{"level":30,"time":1752530845847,"pid":70981,"hostname":"Mac","reqId":"req-1","req":{"method":"GET","url":"/health","hostname":"localhost:3000","remoteAddress":"::1","remotePort":54941},"msg":"incoming request"}
+{"timestamp":"2025-07-14T22:07:25.848Z","request_id":"health-check","component":"server","action":"health_check","level":"info"}
+{"level":30,"time":1752530845851,"pid":70981,"hostname":"Mac","reqId":"req-1","res":{"statusCode":200},"responseTime":3.8123340606689453,"msg":"request completed"}
+{"level":30,"time":1752530877027,"pid":70981,"hostname":"Mac","reqId":"req-2","req":{"method":"POST","url":"/api/courses","hostname":"localhost:3000","remoteAddress":"::1","remotePort":54990},"msg":"incoming request"}
+Error creating course: PostgresError: database "satoshi" does not exist
+    at ErrorResponse (/Users/satoshi/courseai/node_modules/postgres/cjs/src/connection.js:794:26)
+    at handle (/Users/satoshi/courseai/node_modules/postgres/cjs/src/connection.js:480:6)
+    at Socket.data (/Users/satoshi/courseai/node_modules/postgres/cjs/src/connection.js:315:9)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+  severity_local: 'FATAL',
+  severity: 'FATAL',
+  code: '3D000',
+  file: 'postinit.c',
+  line: '950',
+  routine: 'InitPostgres'
+}
+{"level":30,"time":1752530877034,"pid":70981,"hostname":"Mac","reqId":"req-2","res":{"statusCode":500},"responseTime":7.69825005531311,"msg":"request completed"}
+{"level":30,"time":1752530877038,"pid":70981,"hostname":"Mac","reqId":"req-3","req":{"method":"POST","url":"/api/chat/stream","hostname":"localhost:3000","remoteAddress":"::1","remotePort":54992},"msg":"incoming request"}
+{"level":30,"time":1752530877039,"pid":70981,"hostname":"Mac","reqId":"req-3","msg":"Route POST:/api/chat/stream not found"}
+{"level":30,"time":1752530877039,"pid":70981,"hostname":"Mac","reqId":"req-3","res":{"statusCode":404},"responseTime":0.4181249141693115,"msg":"request completed"}
+{"level":30,"time":1752530997247,"pid":70981,"hostname":"Mac","reqId":"req-4","req":{"method":"POST","url":"/api/chat/test-course-123/message","hostname":"localhost:3000","remoteAddress":"::1","remotePort":55343},"msg":"incoming request"}
+Chat error: PostgresError: database "satoshi" does not exist
+    at ErrorResponse (/Users/satoshi/courseai/node_modules/postgres/cjs/src/connection.js:794:26)
+    at handle (/Users/satoshi/courseai/node_modules/postgres/cjs/src/connection.js:480:6)
+    at Socket.data (/Users/satoshi/courseai/node_modules/postgres/cjs/src/connection.js:315:9)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+  severity_local: 'FATAL',
+  severity: 'FATAL',
+  code: '3D000',
+  file: 'postinit.c',
+  line: '950',
+  routine: 'InitPostgres'
+}
+{"level":30,"time":1752530997254,"pid":70981,"hostname":"Mac","reqId":"req-4","res":{"statusCode":500},"responseTime":6.824958086013794,"msg":"request completed"}
+6:10:29 PM [tsx] change in ./src/index.ts Restarting...
+cSupabase configuration missing. Authentication features will be disabled.
+{"level":30,"time":1752531029816,"pid":71314,"hostname":"Mac","msg":"Server listening at http://[::1]:3000"}
+{"level":30,"time":1752531029816,"pid":71314,"hostname":"Mac","msg":"Server listening at http://127.0.0.1:3000"}
+🚀 Courses AI backend running on http://localhost:3000
+📋 Health check: http://localhost:3000/health
+🧪 Test endpoint: http://localhost:3000/api/test
+6:10:36 PM [tsx] change in ./src/index.ts Restarting...
+cSupabase configuration missing. Authentication features will be disabled.
+{"level":30,"time":1752531036436,"pid":71325,"hostname":"Mac","msg":"Server listening at http://[::1]:3000"}
+{"level":30,"time":1752531036437,"pid":71325,"hostname":"Mac","msg":"Server listening at http://127.0.0.1:3000"}
+🚀 Courses AI backend running on http://localhost:3000
+📋 Health check: http://localhost:3000/health
+🧪 Test endpoint: http://localhost:3000/api/test
+{"level":30,"time":1752531065921,"pid":71325,"hostname":"Mac","reqId":"req-1","req":{"method":"POST","url":"/api/demo/chat","hostname":"localhost:3000","remoteAddress":"::1","remotePort":55482},"msg":"incoming request"}
+{"level":30,"time":1752531069962,"pid":71325,"hostname":"Mac","reqId":"req-1","res":{"statusCode":200},"responseTime":4040.577584028244,"msg":"request completed"}

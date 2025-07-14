@@ -13,7 +13,7 @@ export async function courseRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Body: z.infer<typeof CreateCourseSchema>;
   }>('/api/courses', async (request, reply) => {
-    const { topic, currentLevel, goals, timelineWeeks, preferences } = request.body;
+    const { topic, currentLevel, goals: _goals, timelineWeeks, preferences } = request.body;
     
     // For now, use a dummy user ID. In real app, extract from JWT
     const userId = '00000000-0000-0000-0000-000000000001';
@@ -103,7 +103,7 @@ export async function courseRoutes(fastify: FastifyInstance) {
       const outline = await openai.generateCourseOutline(
         course.topic,
         course.currentLevel || 'beginner',
-        course.preferences?.focusAreas
+        (course.preferences as any)?.focusAreas
       );
 
       // Save curriculum

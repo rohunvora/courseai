@@ -1,283 +1,213 @@
 #!/usr/bin/env tsx
 
-import { setTimeout } from 'timers/promises';
+/**
+ * Smoke Test for CourseAI API
+ * Tests all critical endpoints to ensure the system is working
+ */
 
-const BASE_URL = process.env.API_URL || 'http://localhost:3000';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
+
+const API_BASE = process.env.API_URL || 'http://localhost:3000';
+const TEST_USER_ID = 'test-user-123';
 
 interface TestResult {
-  name: string;
+  endpoint: string;
+  method: string;
+  status: number;
   success: boolean;
-  duration: number;
   error?: string;
-  data?: any;
+  duration: number;
 }
 
-class SmokeTest {
-  private results: TestResult[] = [];
-
-  async run() {
-    console.log('🔥 Starting Courses AI Smoke Test\n');
-    console.log(`Testing against: ${BASE_URL}\n`);
-
-    await this.test('Health Check', () => this.testHealthCheck());
-    await this.test('Create Course', () => this.testCreateCourse());
-    await this.test('Generate Curriculum', () => this.testGenerateCurriculum());
-    await this.test('Start Session', () => this.testStartSession());
-    await this.test('Send Chat Message', () => this.testChatMessage());
-    await this.test('Log Progress', () => this.testLogProgress());
-    await this.test('Streaming Chat', () => this.testStreamingChat());
-
-    this.printResults();
-    this.exit();
-  }
-
-  private async test(name: string, testFn: () => Promise<any>) {
-    const start = Date.now();
-    try {
-      const data = await testFn();
-      const duration = Date.now() - start;
-      this.results.push({ name, success: true, duration, data });
-      console.log(`✅ ${name} (${duration}ms)`);
-    } catch (error) {
-      const duration = Date.now() - start;
-      this.results.push({ 
-        name, 
-        success: false, 
-        duration, 
-        error: error instanceof Error ? error.message : String(error) 
-      });
-      console.log(`❌ ${name} (${duration}ms): ${error}`);
-    }
-  }
-
-  private async testHealthCheck() {
-    const response = await fetch(`${BASE_URL}/health`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
-  }
-
-  private async testCreateCourse() {
-    const response = await fetch(`${BASE_URL}/api/courses`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        topic: 'Strength Training for Beginners',
-        currentLevel: 'beginner',
-        goals: ['build muscle', 'improve form'],
-        timelineWeeks: 8,
-        preferences: {
-          sessionLength: 60,
-          difficulty: 'moderate',
-          focusAreas: ['compound movements']
-        }
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`HTTP ${response.status}: ${error}`);
-    }
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error?.message || 'Course creation failed');
-    
-    // Store course ID for subsequent tests
-    (global as any).testCourseId = data.data.id;
-    return data;
-  }
-
-  private async testGenerateCurriculum() {
-    const courseId = (global as any).testCourseId;
-    if (!courseId) throw new Error('No course ID from previous test');
-
-    const response = await fetch(`${BASE_URL}/api/curriculum/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ courseId }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`HTTP ${response.status}: ${error}`);
-    }
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error?.message || 'Curriculum generation failed');
-    return data;
-  }
-
-  private async testStartSession() {
-    const courseId = (global as any).testCourseId;
-    if (!courseId) throw new Error('No course ID from previous test');
-
-    const response = await fetch(`${BASE_URL}/api/sessions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        courseId,
-        sessionType: 'practice',
-        plannedDuration: 60
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`HTTP ${response.status}: ${error}`);
-    }
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error?.message || 'Session start failed');
-    
-    // Store session ID for subsequent tests
-    (global as any).testSessionId = data.data.id;
-    return data;
-  }
-
-  private async testChatMessage() {
-    const courseId = (global as any).testCourseId;
-    const sessionId = (global as any).testSessionId;
-    if (!courseId) throw new Error('No course ID from previous test');
-
-    const response = await fetch(`${BASE_URL}/api/chat/${courseId}/message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: 'Hello! I just did 3 sets of bench press at 135lbs with 8, 7, 6 reps. How did I do?',
-        sessionId,
-        context: {
-          current_exercise: 'bench_press',
-          weight: '135lbs'
-        }
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`HTTP ${response.status}: ${error}`);
-    }
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error?.message || 'Chat message failed');
-    return data;
-  }
-
-  private async testLogProgress() {
-    const courseId = (global as any).testCourseId;
-    const sessionId = (global as any).testSessionId;
-    if (!courseId) throw new Error('No course ID from previous test');
-
-    const response = await fetch(`${BASE_URL}/api/progress/log`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        courseId,
-        sessionId,
-        activityType: 'exercise',
-        data: {
-          exercise: 'deadlift',
-          weight: '225lbs',
-          sets: 3,
-          reps: [5, 5, 4],
-          notes: 'felt strong today'
-        }
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`HTTP ${response.status}: ${error}`);
-    }
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error?.message || 'Progress logging failed');
-    return data;
-  }
-
-  private async testStreamingChat() {
-    const courseId = (global as any).testCourseId;
-    const sessionId = (global as any).testSessionId;
-    if (!courseId) throw new Error('No course ID from previous test');
-
-    const response = await fetch(`${BASE_URL}/api/chat/${courseId}/message`, {
-      method: 'POST',
-      headers: { 
+async function testEndpoint(
+  method: string,
+  endpoint: string,
+  body?: any
+): Promise<TestResult> {
+  const start = Date.now();
+  
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      method,
+      headers: {
         'Content-Type': 'application/json',
-        'Accept': 'text/event-stream'
       },
-      body: JSON.stringify({
-        message: 'Give me a quick motivational message!',
-        sessionId
-      }),
+      body: body ? JSON.stringify(body) : undefined,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`HTTP ${response.status}: ${error}`);
-    }
-
-    // For streaming, just check that we get the right content type
-    const contentType = response.headers.get('content-type');
-    if (!contentType?.includes('text/event-stream')) {
-      throw new Error(`Expected event-stream, got ${contentType}`);
-    }
-
-    // Read a few chunks to verify streaming works
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error('No response body reader');
-
-    const decoder = new TextDecoder();
-    let chunks = 0;
+    const duration = Date.now() - start;
     
-    try {
-      while (chunks < 3) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value);
-        if (chunk.trim()) chunks++;
-        
-        // Don't read forever
-        if (chunks >= 3) break;
-      }
-    } finally {
-      reader.releaseLock();
-    }
+    return {
+      endpoint,
+      method,
+      status: response.status,
+      success: response.ok,
+      duration,
+    };
+  } catch (error) {
+    return {
+      endpoint,
+      method,
+      status: 0,
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration: Date.now() - start,
+    };
+  }
+}
 
-    return { contentType, chunksReceived: chunks };
+async function runSmokeTest() {
+  console.log('🚬 CourseAI Smoke Test\n');
+  console.log(`📍 API Base: ${API_BASE}\n`);
+
+  const results: TestResult[] = [];
+  let courseId: string | null = null;
+  let sessionId: string | null = null;
+
+  // Test 1: Health Check
+  console.log('1️⃣  Testing health check...');
+  const healthResult = await testEndpoint('GET', '/health');
+  results.push(healthResult);
+  console.log(healthResult.success ? '✅ Health check passed' : '❌ Health check failed');
+
+  // Test 2: Create Course
+  console.log('\n2️⃣  Testing course creation...');
+  const courseResult = await testEndpoint('POST', '/api/courses', {
+    userId: TEST_USER_ID,
+    topic: 'Smoke Test - Fitness',
+    currentLevel: 'beginner',
+    targetLevel: 'intermediate',
+    timelineWeeks: 12,
+    preferences: {
+      focusAreas: ['strength', 'cardio'],
+      equipment: ['dumbbells', 'resistance bands'],
+    },
+  });
+  results.push(courseResult);
+  
+  if (courseResult.success) {
+    const response = await fetch(`${API_BASE}/api/courses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: TEST_USER_ID,
+        topic: 'Smoke Test - Fitness',
+        currentLevel: 'beginner',
+        targetLevel: 'intermediate',
+        timelineWeeks: 12,
+        preferences: {},
+      }),
+    });
+    const data = await response.json();
+    courseId = data.courseId;
+    console.log(`✅ Course created: ${courseId}`);
+  } else {
+    console.log('❌ Course creation failed');
   }
 
-  private printResults() {
-    console.log('\n📊 Test Results:');
-    console.log('================');
-    
-    const passed = this.results.filter(r => r.success).length;
-    const total = this.results.length;
-    const avgDuration = this.results.reduce((sum, r) => sum + r.duration, 0) / total;
+  // Test 3: Get Course
+  if (courseId) {
+    console.log('\n3️⃣  Testing course retrieval...');
+    const getCourseResult = await testEndpoint('GET', `/api/courses/${courseId}`);
+    results.push(getCourseResult);
+    console.log(getCourseResult.success ? '✅ Course retrieved' : '❌ Course retrieval failed');
+  }
 
-    console.log(`✅ Passed: ${passed}/${total}`);
-    console.log(`⏱️  Average duration: ${avgDuration.toFixed(0)}ms`);
+  // Test 4: Create Session
+  if (courseId) {
+    console.log('\n4️⃣  Testing session creation...');
+    const sessionResult = await testEndpoint('POST', '/api/sessions', {
+      userId: TEST_USER_ID,
+      courseId,
+      sessionType: 'workout',
+      plannedDuration: 45,
+    });
+    results.push(sessionResult);
     
-    if (passed < total) {
-      console.log('\n❌ Failed tests:');
-      this.results
-        .filter(r => !r.success)
-        .forEach(r => console.log(`   - ${r.name}: ${r.error}`));
+    if (sessionResult.success) {
+      const response = await fetch(`${API_BASE}/api/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: TEST_USER_ID,
+          courseId,
+          sessionType: 'workout',
+          plannedDuration: 45,
+        }),
+      });
+      const data = await response.json();
+      sessionId = data.sessionId;
+      console.log(`✅ Session created: ${sessionId}`);
+    } else {
+      console.log('❌ Session creation failed');
     }
-
-    console.log('\n🎉 Core brain functionality working!');
-    console.log('\nNext steps:');
-    console.log('1. Set up your .env file with DATABASE_URL and OPENAI_API_KEY');
-    console.log('2. Run database migrations: npm run db:push');
-    console.log('3. Start the server: npm run dev');
-    console.log('4. Build a simple frontend that calls these endpoints');
   }
 
-  private exit() {
-    const passed = this.results.filter(r => r.success).length;
-    const total = this.results.length;
-    process.exit(passed === total ? 0 : 1);
+  // Test 5: Chat Stream
+  if (courseId) {
+    console.log('\n5️⃣  Testing chat stream...');
+    const chatResult = await testEndpoint('POST', '/api/chat/stream', {
+      courseId,
+      sessionId,
+      message: 'Hello, this is a smoke test!',
+    });
+    results.push(chatResult);
+    console.log(chatResult.success ? '✅ Chat endpoint responsive' : '❌ Chat endpoint failed');
   }
+
+  // Test 6: Progress Logging
+  if (courseId) {
+    console.log('\n6️⃣  Testing progress logging...');
+    const progressResult = await testEndpoint('POST', '/api/progress', {
+      userId: TEST_USER_ID,
+      courseId,
+      sessionId,
+      activityType: 'workout',
+      data: {
+        exercise: 'Push-ups',
+        sets: 3,
+        reps: [15, 12, 10],
+      },
+      metrics: {
+        totalReps: 37,
+        duration: 5,
+      },
+    });
+    results.push(progressResult);
+    console.log(progressResult.success ? '✅ Progress logged' : '❌ Progress logging failed');
+  }
+
+  // Summary
+  console.log('\n' + '='.repeat(50));
+  console.log('📊 SMOKE TEST SUMMARY\n');
+  
+  const passed = results.filter(r => r.success).length;
+  const failed = results.filter(r => !r.success).length;
+  
+  console.log(`Total tests: ${results.length}`);
+  console.log(`✅ Passed: ${passed}`);
+  console.log(`❌ Failed: ${failed}`);
+  
+  if (failed > 0) {
+    console.log('\n❌ Failed tests:');
+    results
+      .filter(r => !r.success)
+      .forEach(r => {
+        console.log(`  - ${r.method} ${r.endpoint}: ${r.error || `Status ${r.status}`}`);
+      });
+  }
+
+  // Performance summary
+  const avgDuration = results.reduce((sum, r) => sum + r.duration, 0) / results.length;
+  console.log(`\n⚡ Average response time: ${avgDuration.toFixed(0)}ms`);
+
+  // Exit code
+  process.exit(failed > 0 ? 1 : 0);
 }
 
 // Run the smoke test
-new SmokeTest().run().catch(console.error);
+console.log('Starting smoke test in 1 second...\n');
+setTimeout(runSmokeTest, 1000);

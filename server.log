@@ -1,0 +1,37 @@
+
+> courseai-backend@0.1.0 dev
+> tsx watch src/index.ts
+
+Supabase configuration missing. Authentication features will be disabled.
+{"level":30,"time":1752530751555,"pid":70691,"hostname":"Mac","msg":"Server listening at http://[::1]:3000"}
+{"level":30,"time":1752530751556,"pid":70691,"hostname":"Mac","msg":"Server listening at http://127.0.0.1:3000"}
+🚀 Courses AI backend running on http://localhost:3000
+📋 Health check: http://localhost:3000/health
+🧪 Test endpoint: http://localhost:3000/api/test
+{"level":30,"time":1752530769592,"pid":70691,"hostname":"Mac","reqId":"req-1","req":{"method":"GET","url":"/health","hostname":"localhost:3000","remoteAddress":"::1","remotePort":54722},"msg":"incoming request"}
+{"timestamp":"2025-07-14T22:06:09.593Z","request_id":"health-check","component":"server","action":"health_check","level":"info"}
+{"level":30,"time":1752530769596,"pid":70691,"hostname":"Mac","reqId":"req-1","res":{"statusCode":200},"responseTime":3.2547078132629395,"msg":"request completed"}
+{"level":30,"time":1752530786948,"pid":70691,"hostname":"Mac","reqId":"req-2","req":{"method":"POST","url":"/api/courses","hostname":"localhost:3000","remoteAddress":"::1","remotePort":54778},"msg":"incoming request"}
+Error creating course: PostgresError: database "satoshi" does not exist
+    at ErrorResponse (/Users/satoshi/courseai/node_modules/postgres/cjs/src/connection.js:794:26)
+    at handle (/Users/satoshi/courseai/node_modules/postgres/cjs/src/connection.js:480:6)
+    at Socket.data (/Users/satoshi/courseai/node_modules/postgres/cjs/src/connection.js:315:9)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+  severity_local: 'FATAL',
+  severity: 'FATAL',
+  code: '3D000',
+  file: 'postinit.c',
+  line: '950',
+  routine: 'InitPostgres'
+}
+{"level":30,"time":1752530786958,"pid":70691,"hostname":"Mac","reqId":"req-2","res":{"statusCode":500},"responseTime":9.799708127975464,"msg":"request completed"}
+{"level":30,"time":1752530800394,"pid":70691,"hostname":"Mac","reqId":"req-3","req":{"method":"POST","url":"/api/chat/stream","hostname":"localhost:3000","remoteAddress":"::1","remotePort":54803},"msg":"incoming request"}
+{"level":50,"time":1752530800395,"pid":70691,"hostname":"Mac","err":{"type":"SyntaxError","message":"Bad escaped character in JSON at position 117 (line 4 column 44)","stack":"SyntaxError: Bad escaped character in JSON at position 117 (line 4 column 44)","statusCode":400},"msg":"Bad escaped character in JSON at position 117 (line 4 column 44)"}
+{"level":30,"time":1752530800395,"pid":70691,"hostname":"Mac","reqId":"req-3","res":{"statusCode":500},"responseTime":0.5677909851074219,"msg":"request completed"}
+{"level":30,"time":1752530807605,"pid":70691,"hostname":"Mac","reqId":"req-4","req":{"method":"POST","url":"/api/chat/stream","hostname":"localhost:3000","remoteAddress":"::1","remotePort":54824},"msg":"incoming request"}
+{"level":50,"time":1752530807605,"pid":70691,"hostname":"Mac","err":{"type":"SyntaxError","message":"Bad escaped character in JSON at position 108 (line 1 column 109)","stack":"SyntaxError: Bad escaped character in JSON at position 108 (line 1 column 109)","statusCode":400},"msg":"Bad escaped character in JSON at position 108 (line 1 column 109)"}
+{"level":30,"time":1752530807605,"pid":70691,"hostname":"Mac","reqId":"req-4","res":{"statusCode":500},"responseTime":0.21074986457824707,"msg":"request completed"}

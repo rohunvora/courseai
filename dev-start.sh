@@ -28,11 +28,11 @@ if [ ! -f ".env" ]; then
     echo "💡 For now, you can run without Supabase (auth will be skipped)"
 fi
 
-echo "🔧 Starting backend on http://localhost:3001..."
-echo "🎨 Starting frontend on http://localhost:3002..."
+echo "🔧 Starting backend on http://localhost:3000..."
+echo "🎨 Starting frontend on http://localhost:5173..."
 echo ""
-echo "🌐 Open http://localhost:3002 to use the chat interface"
-echo "📋 Backend health check: curl http://localhost:3001/health"
+echo "🌐 Open http://localhost:5173 to use the chat interface"
+echo "📋 Backend health check: curl http://localhost:3000/health"
 echo ""
 echo "Press Ctrl+C to stop all services"
 echo ""

@@ -2,9 +2,11 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import dotenv from 'dotenv';
 import { chatRoutes } from './routes/chat.js';
+import { chatRoutesWithTools } from './routes/chat-tools.js';
 import { courseRoutes } from './routes/courses.js';
 import { progressRoutes } from './routes/progress.js';
 import { authRoutes } from './routes/auth.js';
+import { demoRoutes } from './routes/demo.js';
 import { logger } from './utils/logger.js';
 
 dotenv.config();
@@ -27,8 +29,8 @@ const start = async () => {
     });
 
     // Health check
-    fastify.get('/health', async (request, reply) => {
-      const requestId = request.headers['x-request-id'] || 'health-check';
+    fastify.get('/health', async (request, _reply) => {
+      const requestId = (request.headers['x-request-id'] as string) || 'health-check';
       logger.info('server', 'health_check', requestId);
       
       return { 
@@ -39,8 +41,8 @@ const start = async () => {
     });
 
     // Simple test endpoint
-    fastify.get('/api/test', async (request, reply) => {
-      const requestId = request.headers['x-request-id'] || 'test-endpoint';
+    fastify.get('/api/test', async (request, _reply) => {
+      const requestId = (request.headers['x-request-id'] as string) || 'test-endpoint';
       logger.info('server', 'test_endpoint', requestId);
       
       return { 
@@ -53,9 +55,18 @@ const start = async () => {
 
     // Register routes
     await fastify.register(authRoutes);
-    await fastify.register(chatRoutes);
+    
+    // Use function calling if enabled
+    if (process.env.ENABLE_FUNCTION_CALLING === 'true') {
+      await fastify.register(chatRoutesWithTools);
+      console.log('✨ Function calling enabled for chat');
+    } else {
+      await fastify.register(chatRoutes);
+    }
+    
     await fastify.register(courseRoutes);
     await fastify.register(progressRoutes);
+    await fastify.register(demoRoutes);
 
     // Error handler
     fastify.setErrorHandler((error, request, reply) => {

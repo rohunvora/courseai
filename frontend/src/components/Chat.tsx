@@ -128,7 +128,7 @@ export default function Chat({ courseId }: ChatProps) {
                   )
                 )
               } else if (data.type === 'complete') {
-                console.log('Stream complete:', data)
+                // Stream completed successfully
               } else if (data.type === 'error') {
                 throw new Error(data.error || 'Stream error')
               }

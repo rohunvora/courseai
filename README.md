@@ -1,52 +1,98 @@
-# Courses AI - Sprint-0 MVP
+# CourseAI - AI Fitness Coach
 
-**AI-powered personalized course platform** with streaming chat interface and intelligent progress tracking.
+**Complete AI-powered fitness coaching platform** with streaming chat, workout tracking, progress analytics, and intelligent memory system.
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ```bash
 # 1. Clone and setup
 git clone <your-repo>
 cd courseai
 
-# 2. Configure environment
-cp .env.template .env.local   # then fill in the keys
-# Edit .env.local with your API keys
+# 2. Copy and configure environment
+cp .env.template .env
+# Edit .env with your API keys (see below)
 
-# 3. Start everything
-./dev-start.sh                # runs everything
+# 3. Install dependencies
+npm install
+cd frontend && npm install && cd ..
+
+# 4. Start development
+./dev-start.sh
 ```
 
 **Open http://localhost:3002** to start chatting with your AI fitness coach!
 
-### Environment Setup
+### Environment Configuration
+
+Copy `.env.template` to `.env` and fill in your API keys:
 
 **Required:**
 - `OPENAI_API_KEY` - Get from [OpenAI Platform](https://platform.openai.com/)
-
-**Optional (for authentication):**
-- `SUPABASE_URL` - Your Supabase project URL
+- `SUPABASE_URL` - Your Supabase project URL  
 - `SUPABASE_ANON_KEY` - Public anon key
-- `SUPABASE_SERVICE_ROLE_KEY` - Service role key (backend only)
+- `SUPABASE_SERVICE_ROLE_KEY` - Service role key
 
-> **Note:** App works without Supabase - auth features will be disabled but core AI chat works perfectly!
+**Quick Setup:**
+1. **OpenAI**: Create account → API Keys → Create new key
+2. **Supabase**: New project → Settings → API → Copy URL & Keys
+3. **Database**: Run migrations: `npm run setup:database`
 
-## ✨ What's Working
+**Optional Configuration:**
+- `OPENAI_MODEL` - Default: gpt-4o
+- `OPENAI_EMBEDDING_MODEL` - Default: text-embedding-3-small
+- `ENABLE_FUNCTION_CALLING` - Default: true (enables workout logging)
 
-- **🧠 AI Brain:** GPT-4o powered conversation with streaming responses
-- **📚 Course Generation:** Automatic curriculum creation  
-- **🏃 Session Tracking:** Real-time workout and learning sessions
-- **📊 Auto-Logging:** AI extracts workout data from natural conversation
-- **🔐 Authentication:** Supabase Auth integration (optional)
-- **📁 Structured Logging:** JSON logs with request tracing
+## ✨ Features
 
-## 🎯 Demo Flow
+### 🧠 AI-Powered Coaching
+- **Streaming Chat:** Real-time GPT-4o responses with token streaming
+- **Function Calling:** AI automatically logs workouts from conversation  
+- **Memory System:** Remembers your workouts and progress across sessions
+- **Smart Tools:** Update progress, get summaries, modify goals via natural language
 
-1. **Start the app** → Creates a "Strength Training" course automatically
-2. **Chat with AI coach** → "I did 3 sets of bench press at 135lbs with 8, 7, 6 reps"
-3. **See real-time streaming** → AI responds token-by-token with encouragement & advice  
-4. **Auto-logging works** → Workout data automatically extracted and saved
-5. **View progress** → Check backend logs for structured activity tracking
+### 📊 Progress Tracking  
+- **Auto-Logging:** "I did 3 sets of bench press at 135lbs" → automatically logged
+- **Progress Updates:** "Actually that was 145lbs" → automatically corrected
+- **Analytics:** "What's my best bench press?" → instant personal records
+- **Journal Drawer:** View 10 most recent workouts with details
+
+### 🎯 Course Management
+- **Course Creation:** Automatic strength training course setup
+- **Session Tracking:** Real-time workout and learning sessions  
+- **Goal Updates:** "I want to focus more on endurance" → goals updated
+- **Structured Data:** All progress stored in Postgres with embeddings
+
+## 🎯 Try It Out
+
+### Basic Workout Logging
+```
+You: "I just did 3 sets of bench press at 135lbs for 10, 8, 6 reps"
+AI: "Great job! I've logged your bench press workout. That's solid progressive overload with the decreasing reps. ✅ Workout logged!"
+```
+
+### Progress Corrections  
+```
+You: "Actually that last set was 145lbs, not 135"
+AI: "No problem! I've updated your last set to 145lbs. Nice strength gain! ✅ Progress updated!"
+```
+
+### Analytics & Progress
+```
+You: "What's my best bench press?"
+AI: "Your current bench press PR is 185lbs! You've been consistently improving - great work!"
+```
+
+### Goal Updates
+```
+You: "I want to focus more on endurance training now"
+AI: "Got it! I've updated your course goals to focus on endurance and cardio. ✅ Goals updated!"
+```
+
+### Journal View
+- Click **📋 Journal** button to see your 10 most recent workouts
+- View date, exercise type, and workout summaries
+- Track your progress over time
 
 ## 🛠️ Development
 
@@ -66,24 +112,32 @@ npm run lint && npm run type-check
 
 ## 🚀 Deployment
 
-### Vercel (Recommended)
+### Vercel (One-Click Deploy)
 
-**Backend:**
-1. Connect your GitHub repo to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy - works out of the box!
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/courseai)
 
-**Frontend:**
-1. Create new Vercel project for `frontend/` folder
-2. Set build command: `npm run build`
-3. Set environment variables with `VITE_` prefix
+**Manual Setup:**
+1. **Fork this repo** and connect to Vercel
+2. **Set environment variables** in Vercel dashboard:
+   ```
+   OPENAI_API_KEY=your-key
+   SUPABASE_URL=your-url  
+   SUPABASE_ANON_KEY=your-key
+   SUPABASE_SERVICE_ROLE_KEY=your-key
+   ENABLE_FUNCTION_CALLING=true
+   NODE_ENV=production
+   ```
+3. **Deploy!** - Frontend and backend auto-configured
 
-### Railway/Render
-Works with default settings - just set environment variables.
+### Alternative Platforms
+- **Railway**: Auto-detects setup, just add environment variables
+- **Render**: Works with default build commands
+- **Heroku**: Compatible with Procfile included
 
-**Build commands work everywhere:**
-- Backend: `npm run build && npm start`
-- Frontend: `npm run build` (serves from `dist/`)
+**Build Commands:**
+- Root: `npm run build` → builds both frontend and backend
+- Frontend: `npm run vercel-build` → optimized for Vercel
+- Backend: Auto-deployed as serverless function
 
 ## Core Endpoints
 
@@ -98,8 +152,15 @@ Works with default settings - just set environment variables.
 
 ### 📊 Progress Tracking
 - `POST /api/sessions` - Start a learning session
-- `POST /api/progress/log` - Log activity/achievement
+- `POST /api/progress/log` - Log activity/achievement  
+- `GET /api/progress/recent?courseId={id}&limit=10` - Get recent progress logs
 - `GET /api/progress/{courseId}` - Get progress history
+
+### 🤖 AI Function Tools (Auto-triggered)
+- `log_workout` - Logs workout data from conversation
+- `update_progress` - Updates previous workout entries
+- `get_progress_summary` - Gets progress analytics & personal records
+- `update_course_goal` - Modifies course goals and preferences
 
 ### 🔧 Utilities
 - `GET /health` - Health check
@@ -162,16 +223,39 @@ curl -X POST http://localhost:3000/api/chat/your-course-id/message \
 - **Session Management** - Track learning sessions with duration and type
 - **Memory Context** - Conversations maintain context across messages
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 src/
-├── db/                 # Database schema & connection
-├── routes/             # API endpoints
-├── services/           # OpenAI integration
-├── types/              # TypeScript types & validation
-└── index.ts           # Server setup
+├── db/
+│   ├── schema.ts      # Drizzle ORM schema (users, courses, progress_logs, user_memory, tool_calls)
+│   └── index.ts       # Database connection & exports
+├── routes/
+│   ├── chat-tools.ts  # Streaming chat with function calling
+│   ├── courses.ts     # Course management
+│   ├── progress.ts    # Progress tracking & recent logs
+│   └── auth.ts        # Authentication (Supabase)
+├── services/
+│   ├── openai-tools.ts # GPT-4o integration + function calling
+│   ├── tools.ts       # Tool functions (workout logging, progress updates)
+│   └── memory.ts      # Embedding pipeline & memory retrieval
+└── index.ts           # Fastify server setup
+
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── Chat.tsx   # Streaming chat interface
+│   │   └── Journal.tsx # Progress drawer with recent workouts
+│   └── App.tsx        # Main application
+└── vite.config.ts     # Build configuration
 ```
+
+### Key Technologies
+- **Backend:** Node.js + Fastify + TypeScript
+- **Database:** PostgreSQL (Supabase) + Drizzle ORM + pgvector
+- **AI:** OpenAI GPT-4o + Function Calling + Embeddings
+- **Frontend:** React + TypeScript + Vite
+- **Deployment:** Vercel (serverless functions)
 
 ## Next Steps
 
@@ -183,11 +267,20 @@ src/
 
 ## Scripts
 
+### Development
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build for production
 - `npm run start` - Start production server
-- `npm run db:generate` - Generate database migrations
-- `npm run db:push` - Push schema to database
-- `npm run smoke-test` - End-to-end API testing
+- `./dev-start.sh` - Start both backend and frontend
+
+### Database
+- `npm run setup:database` - Setup Supabase database schema
+- `npm run check:database` - Check database tables and connection
+- `npm run test:connection` - Test Supabase connectivity
+
+### Testing & Quality
+- `npm run test:smoke` - Run API smoke tests
+- `npm run lint` - Run ESLint checks
+- `npm run type-check` - Run TypeScript type checking
 
 The brain is ready! 🧠✨

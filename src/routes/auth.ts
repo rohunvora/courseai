@@ -4,14 +4,14 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase.js';
 import { logger } from '../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 
-const SignupSchema = z.object({
+const _SignupSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
 });
 
-const LoginSchema = z.object({
+const _LoginSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(1, 'Password is required'),
 });
@@ -19,7 +19,7 @@ const LoginSchema = z.object({
 export async function authRoutes(fastify: FastifyInstance) {
   // Sign up endpoint
   fastify.post<{
-    Body: z.infer<typeof SignupSchema>;
+    Body: z.infer<typeof _SignupSchema>;
   }>('/auth/signup', async (request, reply) => {
     const requestId = uuidv4();
     
@@ -36,7 +36,15 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
     
     try {
-      const { email, password, firstName, lastName } = request.body;
+      const validation = _SignupSchema.safeParse(request.body);
+      if (!validation.success) {
+        return reply.status(400).send({
+          success: false,
+          error: { type: 'validation_error', message: validation.error.issues[0].message }
+        });
+      }
+      
+      const { email, password, firstName, lastName } = validation.data;
       
       logger.info('auth', 'signup_attempt', requestId, { email });
 
@@ -107,7 +115,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Login endpoint
   fastify.post<{
-    Body: z.infer<typeof LoginSchema>;
+    Body: z.infer<typeof _LoginSchema>;
   }>('/auth/login', async (request, reply) => {
     const requestId = uuidv4();
     
@@ -120,7 +128,15 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
     
     try {
-      const { email, password } = request.body;
+      const validation = _LoginSchema.safeParse(request.body);
+      if (!validation.success) {
+        return reply.status(400).send({
+          success: false,
+          error: { type: 'validation_error', message: validation.error.issues[0].message }
+        });
+      }
+      
+      const { email, password } = validation.data;
       
       logger.info('auth', 'login_attempt', requestId, { email });
 

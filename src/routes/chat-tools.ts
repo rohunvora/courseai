@@ -1,15 +1,17 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { db, chatHistory, courses, progressLogs } from '../db/index.js';
-import { OpenAIService } from '../services/openai.js';
+import { db, chatHistory, courses } from '../db/index.js';
+import { OpenAIServiceWithTools } from '../services/openai-tools.js';
+import { getMemoryService } from '../services/memory.js';
 import { ChatMessageSchema, StreamToken, ChatResponse } from '../types/index.js';
 import { eq, desc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
-let openai: OpenAIService;
+let openai: OpenAIServiceWithTools;
+let memoryService = getMemoryService();
 
-export async function chatRoutes(fastify: FastifyInstance) {
-  // Stream chat endpoint
+export async function chatRoutesWithTools(fastify: FastifyInstance) {
+  // Stream chat endpoint with function calling
   fastify.post<{
     Params: { courseId: string };
     Body: z.infer<typeof ChatMessageSchema>;
@@ -21,7 +23,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     try {
       // Initialize OpenAI service if not already done
       if (!openai) {
-        openai = new OpenAIService();
+        openai = new OpenAIServiceWithTools();
       }
 
       // Get course info
@@ -46,6 +48,31 @@ export async function chatRoutes(fastify: FastifyInstance) {
           role: msg.messageType as 'user' | 'assistant',
           content: msg.content,
         }));
+
+      // Get recent workouts and relevant memories
+      const [recentWorkouts, relevantMemories] = await Promise.all([
+        memoryService.getRecentWorkouts(course.userId, courseId),
+        memoryService.getRelevantMemories(course.userId, message, { courseId, limit: 5 })
+      ]);
+
+      const workoutContext = recentWorkouts.map(w => {
+        const data = w.data as any;
+        const metrics = w.metrics as any;
+        return {
+          exercise: data.exercise,
+          sets: data.sets,
+          totalVolume: metrics?.totalVolume,
+          timestamp: w.timestamp,
+        };
+      });
+      
+      // Add memories to message context as assistant context (no system messages for OpenAI service)
+      const memoryContextString = relevantMemories.length > 0 
+        ? `Previous context: ${relevantMemories.map(m => m.content).join('; ')}`
+        : '';
+      
+      // Only include user/assistant messages for the OpenAI service
+      const enhancedMessageContext = messageContext;
 
       // Save user message
       await db.insert(chatHistory).values({
@@ -75,15 +102,19 @@ export async function chatRoutes(fastify: FastifyInstance) {
         const messageId = uuidv4();
 
         try {
-          // Stream tokens
-          const stream = await openai.streamChatResponse(message, {
+          // Stream tokens with tool support
+          const { textStream, toolCallsPromise } = await openai.streamChatResponseWithTools(message, {
+            userId: course.userId,
             courseId,
+            sessionId,
             topic: course.topic,
-            recentMessages: messageContext,
+            recentMessages: enhancedMessageContext,
             currentExercise: context?.current_exercise,
+            recentWorkouts: workoutContext,
           });
 
-          for await (const token of stream) {
+          // Stream text tokens
+          for await (const token of textStream) {
             assistantResponse += token;
             
             const streamData: StreamToken = {
@@ -95,26 +126,27 @@ export async function chatRoutes(fastify: FastifyInstance) {
             reply.raw.write(`data: ${JSON.stringify(streamData)}\n\n`);
           }
 
-          // Extract activity data for auto-logging
-          const activityData = await openai.extractActivityData(message, context);
+          // Wait for tool calls to complete
+          const toolResults = await toolCallsPromise;
+          
+          // Include tool results in the response
           let autoLogged: any = undefined;
-
-          if (activityData && sessionId) {
-            const logEntry = await db.insert(progressLogs).values({
-              userId: course.userId,
-              courseId,
-              sessionId,
-              activityType: activityData.activityType,
-              data: activityData.data,
-              notes: activityData.needsAttention ? 'Needs attention - form/safety concern' : undefined,
-            }).returning();
-
-            autoLogged = {
-              id: logEntry[0].id,
-              activityType: activityData.activityType,
-              data: activityData.data,
-              needsAttention: activityData.needsAttention,
-            };
+          if (toolResults.length > 0) {
+            // Find successful workout logs
+            const workoutLogs = toolResults.filter(
+              r => r.toolName === 'log_workout' && r.result?.success
+            );
+            
+            if (workoutLogs.length > 0) {
+              // Convert to expected format
+              const firstLog = workoutLogs[0];
+              autoLogged = {
+                id: firstLog.result.id,
+                activityType: 'exercise',
+                data: firstLog.result,
+                notes: undefined
+              };
+            }
           }
 
           // Save assistant response
@@ -123,8 +155,32 @@ export async function chatRoutes(fastify: FastifyInstance) {
             sessionId,
             messageType: 'assistant',
             content: assistantResponse,
+            context: { toolCalls: toolResults },
             requestId,
           });
+          
+          // Queue memories for embedding
+          await memoryService.queueChatMemory(
+            course.userId,
+            courseId,
+            message,
+            assistantResponse
+          );
+          
+          // Queue workout memories if any were logged
+          if (toolResults.length > 0) {
+            const workoutLogs = toolResults.filter(
+              r => r.toolName === 'log_workout' && r.result?.success
+            );
+            
+            for (const log of workoutLogs) {
+              await memoryService.queueWorkoutMemory(
+                course.userId,
+                courseId,
+                log.result
+              );
+            }
+          }
 
           // Send completion event
           const completeData: StreamToken = {
@@ -145,40 +201,34 @@ export async function chatRoutes(fastify: FastifyInstance) {
           reply.raw.end();
         }
       } else {
-        // Non-streaming response
-        let assistantResponse = '';
-        
-        const stream = await openai.streamChatResponse(message, {
+        // Non-streaming response with tools
+        const { response, toolCalls } = await openai.getChatResponseWithTools(message, {
+          userId: course.userId,
           courseId,
+          sessionId,
           topic: course.topic,
-          recentMessages: messageContext,
+          recentMessages: enhancedMessageContext,
           currentExercise: context?.current_exercise,
+          recentWorkouts: workoutContext,
         });
 
-        for await (const token of stream) {
-          assistantResponse += token;
-        }
-
-        // Extract activity data for auto-logging
-        const activityData = await openai.extractActivityData(message, context);
+        // Include tool results in the response
         let autoLogged: any = undefined;
-
-        if (activityData && sessionId) {
-          const logEntry = await db.insert(progressLogs).values({
-            userId: course.userId,
-            courseId,
-            sessionId,
-            activityType: activityData.activityType,
-            data: activityData.data,
-            notes: activityData.needsAttention ? 'Needs attention - form/safety concern' : undefined,
-          }).returning();
-
-          autoLogged = {
-            id: logEntry[0].id,
-            activityType: activityData.activityType,
-            data: activityData.data,
-            needsAttention: activityData.needsAttention,
-          };
+        if (toolCalls.length > 0) {
+          const workoutLogs = toolCalls.filter(
+            r => r.toolName === 'log_workout' && r.result?.success
+          );
+          
+          if (workoutLogs.length > 0) {
+            // Convert to expected format
+            const firstLog = workoutLogs[0];
+            autoLogged = {
+              id: firstLog.result.id,
+              activityType: 'exercise',
+              data: firstLog.result,
+              notes: undefined
+            };
+          }
         }
 
         // Save assistant response
@@ -186,19 +236,43 @@ export async function chatRoutes(fastify: FastifyInstance) {
           courseId,
           sessionId,
           messageType: 'assistant',
-          content: assistantResponse,
+          content: response,
+          context: { toolCalls },
           requestId,
         });
+        
+        // Queue memories for embedding
+        await memoryService.queueChatMemory(
+          course.userId,
+          courseId,
+          message,
+          response
+        );
+        
+        // Queue workout memories if any were logged
+        if (toolCalls.length > 0) {
+          const workoutLogs = toolCalls.filter(
+            r => r.toolName === 'log_workout' && r.result?.success
+          );
+          
+          for (const log of workoutLogs) {
+            await memoryService.queueWorkoutMemory(
+              course.userId,
+              courseId,
+              log.result
+            );
+          }
+        }
 
-        const response: ChatResponse = {
+        const chatResponse: ChatResponse = {
           requestId,
-          response: assistantResponse,
+          response,
           autoLogged,
         };
 
         return reply.send({
           success: true,
-          data: response,
+          data: chatResponse,
           meta: { requestId, timestamp: new Date() },
         });
       }

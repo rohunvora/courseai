@@ -1,5 +1,22 @@
-import { pgTable, uuid, varchar, text, integer, timestamp, jsonb, boolean, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, integer, timestamp, jsonb, boolean, index, real, customType } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+
+// Custom vector type for pgvector
+const vector = customType<{
+  data: number[];
+  driverData: string;
+  config: { dimensions?: number };
+}>({
+  dataType(config) {
+    return config?.dimensions ? `vector(${config.dimensions})` : 'vector';
+  },
+  toDriver(value: number[]): string {
+    return `[${value.join(',')}]`;
+  },
+  fromDriver(value: string): number[] {
+    return value.slice(1, -1).split(',').map(Number);
+  },
+});
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -97,11 +114,54 @@ export const curriculum = pgTable('curriculum', {
   versionIdx: index('idx_curriculum_version').on(table.courseId, table.version),
 }));
 
+export const userMemory = pgTable('user_memory', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  courseId: uuid('course_id').references(() => courses.id),
+  content: text('content').notNull(),
+  embedding: vector('embedding', { dimensions: 1536 }),
+  embeddingModel: varchar('embedding_model', { length: 50 }).default('text-embedding-3-small'),
+  metadata: jsonb('metadata'),
+  importanceScore: real('importance_score').default(1.0),
+  redacted: boolean('redacted').default(false),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => ({
+  userIdIdx: index('idx_memory_user_id').on(table.userId),
+  courseIdIdx: index('idx_memory_course_id').on(table.courseId),
+  redactedIdx: index('idx_memory_redacted').on(table.redacted),
+  importanceIdx: index('idx_memory_importance').on(table.importanceScore),
+  // Note: HNSW index needs to be created manually in migration
+  // embeddingIdx: index('idx_memory_embedding').using('hnsw', table.embedding.op('vector_cosine_ops')),
+}));
+
+export const toolCalls = pgTable('tool_calls', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  courseId: uuid('course_id').references(() => courses.id),
+  sessionId: uuid('session_id').references(() => sessions.id),
+  toolName: varchar('tool_name', { length: 100 }).notNull(),
+  parameters: jsonb('parameters'),
+  result: jsonb('result'),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  error: text('error'),
+  executionTime: integer('execution_time'),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => ({
+  userIdIdx: index('idx_tool_calls_user_id').on(table.userId),
+  courseIdIdx: index('idx_tool_calls_course_id').on(table.courseId),
+  sessionIdIdx: index('idx_tool_calls_session_id').on(table.sessionId),
+  toolNameIdx: index('idx_tool_calls_tool_name').on(table.toolName),
+  statusIdx: index('idx_tool_calls_status').on(table.status),
+  createdAtIdx: index('idx_tool_calls_created_at').on(table.createdAt),
+}));
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   courses: many(courses),
   sessions: many(sessions),
   progressLogs: many(progressLogs),
+  userMemory: many(userMemory),
+  toolCalls: many(toolCalls),
 }));
 
 export const coursesRelations = relations(courses, ({ one, many }) => ({
@@ -110,6 +170,8 @@ export const coursesRelations = relations(courses, ({ one, many }) => ({
   chatHistory: many(chatHistory),
   progressLogs: many(progressLogs),
   curriculum: many(curriculum),
+  userMemory: many(userMemory),
+  toolCalls: many(toolCalls),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
@@ -117,6 +179,7 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
   course: one(courses, { fields: [sessions.courseId], references: [courses.id] }),
   chatHistory: many(chatHistory),
   progressLogs: many(progressLogs),
+  toolCalls: many(toolCalls),
 }));
 
 export const chatHistoryRelations = relations(chatHistory, ({ one }) => ({
@@ -132,4 +195,15 @@ export const progressLogsRelations = relations(progressLogs, ({ one }) => ({
 
 export const curriculumRelations = relations(curriculum, ({ one }) => ({
   course: one(courses, { fields: [curriculum.courseId], references: [courses.id] }),
+}));
+
+export const userMemoryRelations = relations(userMemory, ({ one }) => ({
+  user: one(users, { fields: [userMemory.userId], references: [users.id] }),
+  course: one(courses, { fields: [userMemory.courseId], references: [courses.id] }),
+}));
+
+export const toolCallsRelations = relations(toolCalls, ({ one }) => ({
+  user: one(users, { fields: [toolCalls.userId], references: [users.id] }),
+  course: one(courses, { fields: [toolCalls.courseId], references: [courses.id] }),
+  session: one(sessions, { fields: [toolCalls.sessionId], references: [sessions.id] }),
 }));

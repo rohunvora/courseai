@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import Chat from './components/Chat'
+import Journal from './components/Journal'
 import './App.css'
 
 function App() {
   const [courseId, setCourseId] = useState<string>('')
   const [isCreatingCourse, setIsCreatingCourse] = useState(false)
   const [error, setError] = useState<string>('')
+  const [isJournalOpen, setIsJournalOpen] = useState(false)
 
   // Create a demo course on app load
   useEffect(() => {
@@ -73,9 +75,22 @@ function App() {
 
   return (
     <div className="container">
+      <button 
+        className="journal-toggle"
+        onClick={() => setIsJournalOpen(true)}
+      >
+        📋 Journal
+      </button>
+      
       <h1>Courses AI - Strength Training Coach</h1>
       <p className="status">Course ID: {courseId}</p>
       <Chat courseId={courseId} />
+      
+      <Journal 
+        courseId={courseId}
+        isOpen={isJournalOpen}
+        onClose={() => setIsJournalOpen(false)}
+      />
     </div>
   )
 }
