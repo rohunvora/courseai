@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { actionTracker } from '../utils/actionTracker'
 
 interface Message {
   id: string
@@ -60,6 +61,9 @@ export default function Chat({ courseId }: ChatProps) {
       content: input.trim(),
       timestamp: new Date(),
     }
+
+    // Track user message
+    actionTracker.trackChatMessage(userMessage.content, 'user')
 
     setMessages(prev => [...prev, userMessage])
     setInput('')

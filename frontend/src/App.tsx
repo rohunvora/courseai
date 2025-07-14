@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Chat from './components/Chat'
 import Journal from './components/Journal'
+import { actionTracker } from './utils/actionTracker'
 import './App.css'
 
 function App() {
@@ -17,6 +18,10 @@ function App() {
   const createDemoCourse = async () => {
     setIsCreatingCourse(true)
     setError('')
+    
+    actionTracker.track('course_creation_start', {
+      timestamp: new Date().toISOString(),
+    })
 
     try {
       const response = await fetch('/api/courses', {
@@ -36,8 +41,17 @@ function App() {
       }
 
       setCourseId(data.data.id)
+      actionTracker.track('course_creation_success', {
+        courseId: data.data.id,
+        timestamp: new Date().toISOString(),
+      })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create course')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create course'
+      setError(errorMessage)
+      actionTracker.track('course_creation_error', {
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
+      })
     } finally {
       setIsCreatingCourse(false)
     }
@@ -77,7 +91,10 @@ function App() {
     <div className="container">
       <button 
         className="journal-toggle"
-        onClick={() => setIsJournalOpen(true)}
+        onClick={() => {
+          setIsJournalOpen(true)
+          actionTracker.trackJournalOpen()
+        }}
       >
         📋 Journal
       </button>
@@ -89,7 +106,10 @@ function App() {
       <Journal 
         courseId={courseId}
         isOpen={isJournalOpen}
-        onClose={() => setIsJournalOpen(false)}
+        onClose={() => {
+          setIsJournalOpen(false)
+          actionTracker.trackJournalClose()
+        }}
       />
     </div>
   )

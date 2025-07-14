@@ -7,6 +7,9 @@ import { courseRoutes } from './routes/courses.js';
 import { progressRoutes } from './routes/progress.js';
 import { authRoutes } from './routes/auth.js';
 import { demoRoutes } from './routes/demo.js';
+import { actionRoutes } from './routes/actions.js';
+import { monitorRoutes } from './routes/monitor.js';
+import { actionLoggerMiddleware } from './middleware/actionLogger.js';
 import { logger } from './utils/logger.js';
 
 dotenv.config();
@@ -27,6 +30,9 @@ const start = async () => {
         : true,
       credentials: true,
     });
+    
+    // Add action logging middleware
+    fastify.addHook('preHandler', actionLoggerMiddleware);
 
     // Health check
     fastify.get('/health', async (request, _reply) => {
@@ -66,6 +72,8 @@ const start = async () => {
     
     await fastify.register(courseRoutes);
     await fastify.register(progressRoutes);
+    await fastify.register(actionRoutes);
+    await fastify.register(monitorRoutes);
     await fastify.register(demoRoutes);
 
     // Error handler
@@ -97,9 +105,18 @@ const start = async () => {
     
     await fastify.listen({ port, host });
     
-    console.log(`🚀 Courses AI backend running on http://${host}:${port}`);
-    console.log(`📋 Health check: http://${host}:${port}/health`);
-    console.log(`🧪 Test endpoint: http://${host}:${port}/api/test`);
+    console.log('\n' + '='.repeat(60));
+    console.log('🚀 CourseAI Backend Server Started!');
+    console.log('='.repeat(60));
+    console.log(`📡 Server: http://${host}:${port}`);
+    console.log(`❤️  Health: http://${host}:${port}/health`);
+    console.log(`🧪 Test: http://${host}:${port}/api/test`);
+    console.log(`📊 Monitor: http://${host}:${port}/monitor/dashboard`);
+    console.log(`🎯 Actions: http://${host}:${port}/api/actions/recent`);
+    console.log('='.repeat(60));
+    console.log('🔍 MONITORING: All user actions will be logged here');
+    console.log('✨ FUNCTION CALLING:', process.env.ENABLE_FUNCTION_CALLING === 'true' ? 'ENABLED' : 'DISABLED');
+    console.log('='.repeat(60) + '\n');
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
