@@ -2,7 +2,7 @@
 
 **AI-powered personalized course platform** with streaming chat interface and intelligent progress tracking.
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ```bash
 # 1. Clone and setup
@@ -10,14 +10,26 @@ git clone <your-repo>
 cd courseai
 
 # 2. Configure environment
-cp .env.example .env
-# Edit .env with your OPENAI_API_KEY
+cp .env.template .env.local   # then fill in the keys
+# Edit .env.local with your API keys
 
 # 3. Start everything
-./dev-start.sh
+./dev-start.sh                # runs everything
 ```
 
 **Open http://localhost:3002** to start chatting with your AI fitness coach!
+
+### Environment Setup
+
+**Required:**
+- `OPENAI_API_KEY` - Get from [OpenAI Platform](https://platform.openai.com/)
+
+**Optional (for authentication):**
+- `SUPABASE_URL` - Your Supabase project URL
+- `SUPABASE_ANON_KEY` - Public anon key
+- `SUPABASE_SERVICE_ROLE_KEY` - Service role key (backend only)
+
+> **Note:** App works without Supabase - auth features will be disabled but core AI chat works perfectly!
 
 ## ✨ What's Working
 
@@ -51,6 +63,27 @@ npm run smoke-test:full
 # Linting & type checking
 npm run lint && npm run type-check
 ```
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+**Backend:**
+1. Connect your GitHub repo to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy - works out of the box!
+
+**Frontend:**
+1. Create new Vercel project for `frontend/` folder
+2. Set build command: `npm run build`
+3. Set environment variables with `VITE_` prefix
+
+### Railway/Render
+Works with default settings - just set environment variables.
+
+**Build commands work everywhere:**
+- Backend: `npm run build && npm start`
+- Frontend: `npm run build` (serves from `dist/`)
 
 ## Core Endpoints
 
