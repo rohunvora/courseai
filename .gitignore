@@ -46,3 +46,4 @@ temp/
 
 # MCP configuration (contains sensitive tokens)
 .mcp.json
+.vercel
