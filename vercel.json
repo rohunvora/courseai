@@ -1,44 +1,13 @@
 {
-  "name": "courseai-preview",
-  "version": 2,
-  "public": false,
-  "github": {
-    "enabled": true,
-    "autoAlias": true,
-    "silent": false
-  },
-  "git": {
-    "deploymentEnabled": {
-      "main": false,
-      "branches": true
-    }
-  },
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "framework": "vite",
+  "installCommand": "echo 'Skipping root install'",
+  "devCommand": "cd frontend && npm run dev",
   "build": {
     "env": {
-      "VITE_ENABLE_PREVIEW_FEATURES": "true"
+      "VITE_ENABLE_PREVIEW_FEATURES": "true",
+      "VITE_API_URL": "https://courseai-api.up.railway.app/api"
     }
-  },
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "api/*.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/demo.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/dist/$1"
-    }
-  ]
+  }
 }

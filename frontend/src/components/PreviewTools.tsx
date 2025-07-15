@@ -32,7 +32,8 @@ export default function PreviewTools({ onReset }: PreviewToolsProps) {
         throw new Error('Admin token required');
       }
 
-      const response = await fetch('/api/admin/seed-demo', {
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const response = await fetch(`${apiUrl}/admin/seed-demo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${adminToken}`,
