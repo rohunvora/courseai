@@ -4,15 +4,22 @@
 
 ## 🧪 For Product Managers & Testers
 
-**Test without any setup!** Every pull request creates a preview environment:
+**Frontend previews deploy automatically!** Backend requires local setup:
 
-1. **Find Preview URL**: Check PR comments for "🚀 Preview Deployment Ready!"
-2. **Quick Access**: Run `npm run open-preview` to open latest preview
-3. **Test Guide**: See [PM_TESTING_GUIDE.md](./PM_TESTING_GUIDE.md) for detailed instructions
+1. **Frontend Preview**: Every PR gets a Vercel preview URL
+2. **Backend Options**:
+   - Run locally: `npm run dev` (requires .env setup)
+   - Or use staging: Contact team for staging URL
+3. **Quick Start**: See [PM_QUICK_START.md](./PM_QUICK_START.md)
 
-**Demo Accounts** (in preview environments):
-- `demo@example.com` / `demo123` - Experienced user with workout history
-- `test@example.com` / `test123` - Beginner user starting fresh
+**Full Testing** (includes backend):
+```bash
+npm run test:demo  # Starts everything locally with demo data
+```
+
+**Demo Accounts**:
+- `demo@example.com` / `demo123` - Experienced user
+- `test@example.com` / `test123` - Beginner user
 
 ## 🚀 Quick Start (For Developers)
 
