@@ -1,0 +1,33 @@
+# GitHub Labels for CourseAI
+
+- name: preview-deployed
+  color: 7057ff
+  description: This PR has a preview deployment ready for testing
+
+- name: needs-testing
+  color: d93f0b
+  description: This PR needs PM/QA testing
+
+- name: tested-approved
+  color: 0e8a16
+  description: This PR has been tested and approved by PM/QA
+
+- name: bug
+  color: d73a4a
+  description: Something isn't working
+
+- name: enhancement
+  color: a2eeef
+  description: New feature or request
+
+- name: safety-critical
+  color: b60205
+  description: Changes that affect workout safety rules
+
+- name: performance
+  color: fbca04
+  description: Performance improvements or issues
+
+- name: documentation
+  color: 0075ca
+  description: Improvements or additions to documentation

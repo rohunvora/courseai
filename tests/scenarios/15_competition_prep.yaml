@@ -1,0 +1,29 @@
+id: competition_prep
+context:
+  topic: "Powerlifting Meet Prep"
+  currentWeek: 20
+  lastWorkoutDays: 1
+  personalRecords:
+    - exercise: "Squat"
+      weight: "365"
+      unit: "lbs"
+    - exercise: "Bench Press"
+      weight: "245"
+      unit: "lbs"
+    - exercise: "Deadlift"
+      weight: "425"
+      unit: "lbs"
+  memories:
+    - content: "First powerlifting meet in 3 weeks"
+    - content: "Current total: 1035 lbs"
+userMessages:
+  - "3 weeks out from my meet"
+  - "Should I test openers this week?"
+expect:
+  toolCalls: []
+  checks:
+    - "opener"
+    - "85-90%"
+    - "365"  # Reference to PRs
+    - "meet"
+    - "taper"

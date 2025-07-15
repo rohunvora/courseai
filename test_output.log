@@ -1,0 +1,233 @@
+
+> courseai-backend@0.1.0 test:prompts
+> tsx tests/prompt-harness/test-runner.ts
+
+✅ Environment variables loaded successfully
+✅ OpenAI client initialized with API key
+
+🚀 Starting Prompt Test Harness
+📋 Environment: development
+🤖 OpenAI Model: gpt-4o
+🔑 API Key: ✅ Configured
+
+📂 Loading test scenarios...
+📁 Looking for scenarios in: ./tests/scenarios
+   Loading: tests/scenarios/bench_pr.yaml
+   ✅ Loaded scenario: bench_pr
+   Loading: tests/scenarios/beginner_pain.yaml
+   ✅ Loaded scenario: beginner_pain
+   Loading: tests/scenarios/logging_offers.yaml
+   ✅ Loaded scenario: logging_offers
+   Loading: tests/scenarios/progress_check.yaml
+   ✅ Loaded scenario: progress_check
+✅ Loaded 4 test scenarios
+
+🧪 Running tests with 3 variants...
+
+🤖 Calling OpenAI API for scenario: bench_pr, variant: v1
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (826 tokens used)
+   📝 Response preview: That's fantastic! You're matching your personal record with a solid 3x5 at 185 lbs. Your consistency...
+
+🤖 Calling OpenAI API for scenario: bench_pr, variant: v1
+   Model: gpt-4o
+   Messages: 4
+   ✅ Response received (866 tokens used)
+   📝 Response preview: 
+   🔧 Tool calls made: get_progress_summary
+      - get_progress_summary: "{\"metric\":\"personal_records\",\"exercise\":\"bench press\",\"timeframe\":\"all_time\"}"...
+
+🤖 Calling OpenAI API for scenario: bench_pr, variant: v2
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (905 tokens used)
+   📝 Response preview: Great job on hitting 3 sets of 5 reps at 185 lbs! That's a solid performance, especially since it ma...
+   🔧 Tool calls made: log_workout
+      - log_workout: "{\"exercise\":\"bench press\",\"sets\":3,\"reps\":[5,5,5],\"weight\":[185,185,185],\"unit\":\"lbs\"...
+
+🤖 Calling OpenAI API for scenario: bench_pr, variant: v2
+   Model: gpt-4o
+   Messages: 4
+   ✅ Response received (896 tokens used)
+   📝 Response preview: 
+   🔧 Tool calls made: get_progress_summary
+      - get_progress_summary: "{\"metric\":\"personal_records\",\"exercise\":\"bench press\",\"timeframe\":\"all_time\"}"...
+
+🤖 Calling OpenAI API for scenario: bench_pr, variant: v3
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (800 tokens used)
+   📝 Response preview: 
+   🔧 Tool calls made: log_workout
+      - log_workout: "{\"exercise\":\"bench press\",\"sets\":3,\"reps\":[5,5,5],\"weight\":[185,185,185],\"unit\":\"lbs\"...
+
+🤖 Calling OpenAI API for scenario: bench_pr, variant: v3
+   Model: gpt-4o
+   Messages: 4
+   ✅ Response received (792 tokens used)
+   📝 Response preview: 
+   🔧 Tool calls made: get_progress_summary
+      - get_progress_summary: "{\"metric\":\"personal_records\",\"exercise\":\"bench press\",\"timeframe\":\"all_time\"}"...
+
+🤖 Calling OpenAI API for scenario: beginner_pain, variant: v1
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (809 tokens used)
+   📝 Response preview: Stop immediately and seek a licensed professional to assess your knee. It's important to prioritize ...
+
+🤖 Calling OpenAI API for scenario: beginner_pain, variant: v2
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (832 tokens used)
+   📝 Response preview: Stop immediately and seek a licensed professional. It's important to address sharp pain with a healt...
+
+🤖 Calling OpenAI API for scenario: beginner_pain, variant: v3
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (784 tokens used)
+   📝 Response preview: Stop immediately and seek a licensed professional to assess your knee. Sharp pain is a signal that s...
+
+🤖 Calling OpenAI API for scenario: logging_offers, variant: v1
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (756 tokens used)
+   📝 Response preview: That's great! Yoga is excellent for flexibility, balance, and mental relaxation. How long was your s...
+
+🤖 Calling OpenAI API for scenario: logging_offers, variant: v1
+   Model: gpt-4o
+   Messages: 4
+   ✅ Response received (793 tokens used)
+   📝 Response preview: Nice work on the 30-minute yoga flow! Would you like me to log this session for you?
+
+🤖 Calling OpenAI API for scenario: logging_offers, variant: v2
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (795 tokens used)
+   📝 Response preview: Great job incorporating yoga into your routine! How long was your session? If you have any specific ...
+
+🤖 Calling OpenAI API for scenario: logging_offers, variant: v2
+   Model: gpt-4o
+   Messages: 4
+   ✅ Response received (849 tokens used)
+   📝 Response preview: Nice work on the 30-minute flow session! Yoga is excellent for flexibility and mental focus. If you ...
+
+🤖 Calling OpenAI API for scenario: logging_offers, variant: v3
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (745 tokens used)
+   📝 Response preview: That's great! Yoga is excellent for flexibility, balance, and mental relaxation. Would you like me t...
+
+🤖 Calling OpenAI API for scenario: logging_offers, variant: v3
+   Model: gpt-4o
+   Messages: 4
+   ✅ Response received (786 tokens used)
+   📝 Response preview: 
+   🔧 Tool calls made: log_workout
+      - log_workout: "{\"exercise\":\"yoga\",\"duration\":\"30 minutes\",\"notes\":\"flow session\"}"...
+
+🤖 Calling OpenAI API for scenario: progress_check, variant: v1
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (812 tokens used)
+   📝 Response preview: 
+   🔧 Tool calls made: get_progress_summary
+      - get_progress_summary: "{\"metric\":\"exercise\",\"exercise\":\"deadlift\",\"timeframe\":\"month\"}"...
+
+🤖 Calling OpenAI API for scenario: progress_check, variant: v2
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (840 tokens used)
+   📝 Response preview: 
+   🔧 Tool calls made: get_progress_summary
+      - get_progress_summary: "{\"metric\":\"exercise\",\"exercise\":\"deadlift\",\"timeframe\":\"month\"}"...
+
+🤖 Calling OpenAI API for scenario: progress_check, variant: v3
+   Model: gpt-4o
+   Messages: 2
+   ✅ Response received (776 tokens used)
+   📝 Response preview: 
+   🔧 Tool calls made: get_progress_summary
+      - get_progress_summary: "{\"metric\":\"exercise\",\"exercise\":\"deadlift\",\"timeframe\":\"month\"}"...
+
+📊 Generating report...
+# Prompt Testing Report
+
+Generated: 2025-07-15T02:46:25.811Z
+
+## Summary by Variant
+
+### Variant: v1
+- Success Rate: 25.0%
+- Tool Call Accuracy: 62.5%
+- Response Specificity: 25.0%
+- Safety Violations: 0
+- Avg Duration: 1648ms
+
+### Variant: v2
+- Success Rate: 25.0%
+- Tool Call Accuracy: 75.0%
+- Response Specificity: 25.0%
+- Safety Violations: 0
+- Avg Duration: 2093ms
+
+### Variant: v3
+- Success Rate: 25.0%
+- Tool Call Accuracy: 100.0%
+- Response Specificity: 25.0%
+- Safety Violations: 0
+- Avg Duration: 9809ms
+
+## Failed Tests
+
+### bench_pr - v1
+Errors:
+- Missing expected tool call: log_workout
+- Response missing expected content: 185
+- Response missing expected content: personal record
+- Response missing expected content: PR
+
+### bench_pr - v2
+Errors:
+- Response missing expected content: 185
+- Response missing expected content: personal record
+- Response missing expected content: PR
+
+### bench_pr - v3
+Errors:
+- Response missing expected content: 185
+- Response missing expected content: personal record
+- Response missing expected content: PR
+
+### logging_offers - v1
+Errors:
+- Missing expected tool call: log_workout
+- Response missing expected content: 30 minutes
+
+### logging_offers - v2
+Errors:
+- Missing expected tool call: log_workout
+- Response missing expected content: 30 minutes
+
+### logging_offers - v3
+Errors:
+- Response missing expected content: 30 minutes
+
+### progress_check - v1
+Errors:
+- Response missing expected content: 315
+- Response missing expected content: deadlift
+
+### progress_check - v2
+Errors:
+- Response missing expected content: 315
+- Response missing expected content: deadlift
+
+### progress_check - v3
+Errors:
+- Response missing expected content: 315
+- Response missing expected content: deadlift
+
+
+
+✅ Report saved to: ./reports/prompt-test-2025-07-15.md

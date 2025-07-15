@@ -11,8 +11,11 @@ import { actionRoutes } from './routes/actions.js';
 import { monitorRoutes } from './routes/monitor.js';
 import { sessionRoutes } from './routes/sessions.js';
 import experimentsRoutes from './routes/experiments.js';
+import { adminRoutes } from './routes/admin.js';
 import { actionLoggerMiddleware } from './middleware/actionLogger.js';
+import { setupErrorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
+import { startQualityMonitoring } from './services/quality-monitor.js';
 
 const fastify = Fastify({
   logger: {
@@ -77,30 +80,10 @@ const start = async () => {
     await fastify.register(monitorRoutes);
     await fastify.register(experimentsRoutes);
     await fastify.register(demoRoutes);
+    await fastify.register(adminRoutes);
 
-    // Error handler
-    fastify.setErrorHandler((error, request, reply) => {
-      fastify.log.error(error);
-      
-      if (error.validation) {
-        return reply.status(400).send({
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid request data',
-            details: error.validation,
-          },
-        });
-      }
-
-      return reply.status(500).send({
-        success: false,
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Internal server error',
-        },
-      });
-    });
+    // Setup error handler with traceable error IDs
+    setupErrorHandler(fastify);
 
     const port = config.server.port;
     const host = config.server.nodeEnv === 'production' ? '0.0.0.0' : 'localhost';
@@ -119,6 +102,9 @@ const start = async () => {
     console.log('🔍 MONITORING: All user actions will be logged here');
     console.log('✨ FUNCTION CALLING:', config.features.functionCalling ? 'ENABLED' : 'DISABLED');
     console.log('='.repeat(60) + '\n');
+    
+    // Start quality monitoring
+    startQualityMonitoring();
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

@@ -2,7 +2,19 @@
 
 **Complete AI-powered fitness coaching platform** with streaming chat, workout tracking, progress analytics, and intelligent memory system.
 
-## 🚀 Quick Start
+## 🧪 For Product Managers & Testers
+
+**Test without any setup!** Every pull request creates a preview environment:
+
+1. **Find Preview URL**: Check PR comments for "🚀 Preview Deployment Ready!"
+2. **Quick Access**: Run `npm run open-preview` to open latest preview
+3. **Test Guide**: See [PM_TESTING_GUIDE.md](./PM_TESTING_GUIDE.md) for detailed instructions
+
+**Demo Accounts** (in preview environments):
+- `demo@example.com` / `demo123` - Experienced user with workout history
+- `test@example.com` / `test123` - Beginner user starting fresh
+
+## 🚀 Quick Start (For Developers)
 
 ```bash
 # 1. Clone and setup

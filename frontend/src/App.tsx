@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Chat from './components/Chat'
 import Journal from './components/Journal'
+import PreviewTools from './components/PreviewTools'
 import { actionTracker } from './utils/actionTracker'
 import './App.css'
 
@@ -89,6 +90,8 @@ function App() {
 
   return (
     <div className="container">
+      <PreviewTools onReset={() => window.location.reload()} />
+      
       <button 
         className="journal-toggle"
         onClick={() => {

@@ -1,0 +1,25 @@
+id: female_specific_training
+context:
+  topic: "Women's Strength Training"
+  currentWeek: 8
+  lastWorkoutDays: 2
+  memories:
+    - content: "Tracks menstrual cycle for training adjustments"
+    - content: "Week 2 of cycle - typically higher energy"
+userMessages:
+  - "Feeling really strong this week"
+  - "Hip thrusts: 3x12 @ 185lbs, new PR!"
+expect:
+  toolCalls:
+    - name: log_workout
+      args:
+        exercise: "Hip Thrusts"
+        sets: 3
+        reps: 12
+        weight: "185 lbs"
+  checks:
+    - "PR"
+    - "185"
+    - "hip thrust"
+    - "strong"
+    - "great work"

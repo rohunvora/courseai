@@ -1,0 +1,19 @@
+id: home_workout_limited_equipment
+context:
+  topic: "Home Training"
+  currentWeek: 3
+  lastWorkoutDays: 2
+  memories:
+    - content: "Only has resistance bands and 20lb dumbbells"
+    - content: "No pull-up bar available"
+userMessages:
+  - "Can't get to the gym today"
+  - "What can I do with just my bands and dumbbells?"
+expect:
+  toolCalls: []
+  checks:
+    - "bands"
+    - "dumbbells"
+    - "20"
+    - "home"
+    - "alternative"

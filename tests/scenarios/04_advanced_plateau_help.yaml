@@ -1,0 +1,40 @@
+id: advanced_plateau_help
+context:
+  topic: "Powerlifting"
+  currentWeek: 35
+  lastWorkoutDays: 1
+  personalRecords:
+    - exercise: "Squat"
+      weight: "315"
+      unit: "lbs"
+      date: "2025-06-01"
+  recentWorkouts:
+    - exercise: "Squat"
+      sets: 5
+      reps: [3, 3, 3, 3, 3]
+      weight: "225 lbs"
+      timestamp: "2025-07-14T10:00:00Z"
+    - exercise: "Squat"
+      sets: 5
+      reps: [3, 3, 3, 3, 3]
+      weight: "225 lbs"
+      timestamp: "2025-07-10T10:00:00Z"
+    - exercise: "Squat"
+      sets: 5
+      reps: [3, 3, 3, 3, 3]
+      weight: "225 lbs"
+      timestamp: "2025-07-06T10:00:00Z"
+  memories:
+    - content: "Working on Texas Method programming"
+    - content: "Deload scheduled every 4th week"
+userMessages:
+  - "Stuck at 225 squat for 3 weeks."
+expect:
+  toolCalls:
+    - name: update_course_goal
+  checks:
+    - "225"
+    - "3 weeks"
+    - "deload"
+    - "volume"
+    - "program"

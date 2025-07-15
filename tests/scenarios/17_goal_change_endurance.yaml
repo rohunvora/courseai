@@ -1,0 +1,22 @@
+id: goal_change_endurance
+context:
+  topic: "Strength Training"
+  currentWeek: 16
+  lastWorkoutDays: 2
+  memories:
+    - content: "Original goal: Build max strength"
+    - content: "Current focus: Low rep heavy lifting"
+userMessages:
+  - "I signed up for a half marathon"
+  - "Need to shift focus to endurance for the next 12 weeks"
+expect:
+  toolCalls:
+    - name: update_course_goal
+      args:
+        newGoal: "endurance"
+  checks:
+    - "half marathon"
+    - "endurance"
+    - "running"
+    - "maintain"
+    - "strength"

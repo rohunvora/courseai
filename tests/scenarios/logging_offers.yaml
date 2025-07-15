@@ -7,7 +7,17 @@ userMessages:
   - "I did some yoga today"
   - "It was about 30 minutes of flow"
 expect:
-  toolCalls:
-    - name: log_workout
-  checks:
-    - "30 minutes"
+  # First message: Vague workout mention, should ask for details
+  message1:
+    toolCalls: []  # Should not log immediately, needs more info
+    semanticContent:
+      - clarifying_question: ["how long", "what type", "duration", "time", "session"]  # Should ask for specifics  
+      - encouragement: ["great", "good", "nice", "excellent", "that's great"]  # Should acknowledge positively
+  
+  # Second message: Now has metrics, should offer to log or log directly
+  message2:
+    toolCalls:
+      - name: log_workout  # Can log with concrete metrics
+        args_contain: ["yoga", "30", "minutes", "flow"]
+    semanticContent:
+      - duration_acknowledgment: ["30 minutes", "30-minute"]  # Must acknowledge the duration

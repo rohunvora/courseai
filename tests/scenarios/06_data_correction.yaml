@@ -1,0 +1,24 @@
+id: data_correction
+context:
+  topic: "Strength Training"
+  currentWeek: 10
+  lastWorkoutDays: 0
+  recentWorkouts:
+    - exercise: "Bench Press"
+      sets: 3
+      reps: [5, 5, 5]
+      weight: "155 lbs"
+      timestamp: "2025-07-15T10:00:00Z"
+      id: "workout-123"
+userMessages:
+  - "Actually the bench set was 165 not 155."
+expect:
+  toolCalls:
+    - name: update_progress
+      args:
+        workoutId: "workout-123"
+        weight: "165 lbs"
+  checks:
+    - "updated"
+    - "165"
+    - "corrected"

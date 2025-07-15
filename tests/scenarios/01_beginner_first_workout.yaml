@@ -1,0 +1,17 @@
+id: beginner_first_workout
+context:
+  topic: "Getting Started"
+  currentWeek: 1
+  lastWorkoutDays: null
+  personalRecords: []
+  recentWorkouts: []
+  memories: []
+userMessages:
+  - "I just did 3x10 body-weight squats."
+expect:
+  toolCalls: []  # Should ask for more details first
+  checks:
+    - "great start"
+    - "how did"
+    - "feel"
+  safetyCheck: false

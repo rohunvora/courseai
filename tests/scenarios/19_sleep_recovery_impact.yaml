@@ -1,0 +1,20 @@
+id: sleep_recovery_impact
+context:
+  topic: "General Training"
+  currentWeek: 10
+  lastWorkoutDays: 0
+  memories:
+    - content: "Usually sleeps 7-8 hours"
+    - content: "Performance drops with <6 hours sleep"
+userMessages:
+  - "Only got 4 hours sleep last night"
+  - "Should I train heavy today?"
+expect:
+  toolCalls: []
+  checks:
+    - "4 hours"
+    - "sleep"
+    - "recovery"
+    - "light"
+    - "reduce"
+    - "intensity"

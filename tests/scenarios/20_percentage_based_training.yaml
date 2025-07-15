@@ -1,0 +1,23 @@
+id: percentage_based_training
+context:
+  topic: "5/3/1 Program"
+  currentWeek: 5
+  lastWorkoutDays: 2
+  personalRecords:
+    - exercise: "Squat"
+      weight: "300"
+      unit: "lbs"
+  memories:
+    - content: "Training max: 270 lbs (90% of 300)"
+    - content: "Week 1: 65%, 75%, 85%"
+userMessages:
+  - "What weights for today's 5/3/1 squats?"
+  - "It's week 1 of the cycle"
+expect:
+  toolCalls: []
+  checks:
+    - "270"  # Training max
+    - "175"  # 65%
+    - "202"  # 75%
+    - "229"  # 85%
+    - "5/3/1"

@@ -1,5 +1,6 @@
 import { PromptVariant, UserSegment, computeUserSegment, selectPromptVariant } from '../config/prompts.js';
 import { db } from '../db/index.js';
+import { qualityMetricsService } from './quality-metrics.js';
 
 export interface PromptSelectionResult {
   variant: PromptVariant;
@@ -9,6 +10,20 @@ export interface PromptSelectionResult {
 
 export class PromptSelectorService {
   private experimentCache = new Map<string, PromptSelectionResult>();
+  private disabledVariants = new Set<string>();
+
+  constructor() {
+    // Load disabled variants from environment
+    this.loadDisabledVariants();
+  }
+
+  private loadDisabledVariants(): void {
+    const disabled = process.env.PROMPT_VARIANT_DISABLED;
+    if (disabled) {
+      disabled.split(',').forEach(v => this.disabledVariants.add(v.trim()));
+      console.log('Disabled prompt variants:', Array.from(this.disabledVariants));
+    }
+  }
 
   async selectPrompt(
     userId: string,
@@ -18,7 +33,13 @@ export class PromptSelectorService {
     // Check cache first
     const cacheKey = `${userId}-${sessionId}`;
     if (this.experimentCache.has(cacheKey)) {
-      return this.experimentCache.get(cacheKey)!;
+      const cached = this.experimentCache.get(cacheKey)!;
+      // Re-check if variant is now disabled
+      if (this.isVariantDisabled(cached.variant.id)) {
+        this.experimentCache.delete(cacheKey);
+      } else {
+        return cached;
+      }
     }
 
     // Get user data for segmentation
@@ -26,7 +47,12 @@ export class PromptSelectorService {
     const segment = computeUserSegment(user);
     
     // Select variant based on user and session
-    const variant = selectPromptVariant(userId, sessionId, segment);
+    let variant = selectPromptVariant(userId, sessionId, segment);
+    
+    // Check if selected variant is disabled
+    if (this.isVariantDisabled(variant.id)) {
+      throw new Error(`Variant ${variant.id} is disabled. No fallback allowed.`);
+    }
     
     // Store selection for analytics
     const experimentId = await this.logExperimentSelection(userId, sessionId, variant, segment);
@@ -41,6 +67,132 @@ export class PromptSelectorService {
     this.experimentCache.set(cacheKey, result);
     
     return result;
+  }
+
+  private isVariantDisabled(variantId: string): boolean {
+    return this.disabledVariants.has(variantId);
+  }
+
+  private getSafeDefaultVariant(): PromptVariant {
+    // Return the safest, most conservative variant
+    return {
+      id: 'safe-default',
+      tone: 'trainer_friend',
+      memoryLoad: 'recent_only',
+      loggingOffer: 'metric_detected',
+      safetyLevel: 'detailed'
+    };
+  }
+
+  // Allow runtime variant disabling without restart
+  disableVariant(variantId: string): void {
+    this.disabledVariants.add(variantId);
+    // Clear cache for any sessions using this variant
+    for (const [key, value] of this.experimentCache.entries()) {
+      if (value.variant.id === variantId) {
+        this.experimentCache.delete(key);
+      }
+    }
+    console.log(`Variant ${variantId} disabled at runtime`);
+  }
+
+  enableVariant(variantId: string): void {
+    this.disabledVariants.delete(variantId);
+    console.log(`Variant ${variantId} re-enabled`);
+  }
+
+  getDisabledVariants(): string[] {
+    return Array.from(this.disabledVariants);
+  }
+
+  // Enhanced kill switch with quality gate monitoring
+  async checkAndDisableVariants(): Promise<{ disabled: string[]; reasons: Record<string, string[]> }> {
+    const variants = ['v1', 'v3', 'v5', 'v6', 'v7']; // Active variants to monitor
+    const disabled: string[] = [];
+    const reasons: Record<string, string[]> = {};
+
+    for (const variantId of variants) {
+      if (this.isVariantDisabled(variantId)) {
+        continue; // Already disabled
+      }
+
+      try {
+        const qualityGates = await qualityMetricsService.checkQualityGates(variantId);
+        
+        if (qualityGates.shouldDisable) {
+          this.disableVariant(variantId);
+          disabled.push(variantId);
+          reasons[variantId] = qualityGates.reasons;
+          
+          // Log the automatic disable action
+          console.warn(`🚨 AUTO-DISABLED variant ${variantId}:`, qualityGates.reasons);
+        }
+      } catch (error) {
+        console.error(`Error checking quality gates for variant ${variantId}:`, error);
+      }
+    }
+
+    return { disabled, reasons };
+  }
+
+  // Check if any variants should be re-enabled based on improved metrics
+  async checkVariantRecovery(): Promise<string[]> {
+    const recovered: string[] = [];
+    
+    for (const variantId of this.disabledVariants) {
+      try {
+        const qualityGates = await qualityMetricsService.checkQualityGates(variantId);
+        
+        // Re-enable if quality gates pass and we have enough recent data
+        if (!qualityGates.shouldDisable) {
+          const metrics = await qualityMetricsService.getVariantMetrics(variantId, 4); // Last 4 hours
+          
+          // Only re-enable if we have sufficient data to be confident
+          if (metrics.requestCount >= 20) {
+            this.enableVariant(variantId);
+            recovered.push(variantId);
+            
+            console.log(`✅ AUTO-RECOVERED variant ${variantId} - quality gates passing`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error checking recovery for variant ${variantId}:`, error);
+      }
+    }
+
+    return recovered;
+  }
+
+  // Get current status of all variants
+  async getVariantStatus(): Promise<Record<string, {
+    enabled: boolean;
+    metrics?: any;
+    qualityGates?: any;
+  }>> {
+    const variants = ['v1', 'v3', 'v5', 'v6', 'v7'];
+    const status: Record<string, any> = {};
+
+    for (const variantId of variants) {
+      const enabled = !this.isVariantDisabled(variantId);
+      
+      try {
+        const metrics = await qualityMetricsService.getVariantMetrics(variantId, 24);
+        const qualityGates = await qualityMetricsService.checkQualityGates(variantId);
+        
+        status[variantId] = {
+          enabled,
+          metrics,
+          qualityGates
+        };
+      } catch (error) {
+        status[variantId] = {
+          enabled,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+      }
+    }
+
+    return status;
   }
 
   private async getUserData(userId: string): Promise<any> {

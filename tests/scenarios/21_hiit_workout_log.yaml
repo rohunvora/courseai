@@ -1,0 +1,21 @@
+id: hiit_workout_log
+context:
+  topic: "Metabolic Conditioning"
+  currentWeek: 6
+  lastWorkoutDays: 1
+userMessages:
+  - "Did 8 rounds: 30s sprints, 30s rest"
+  - "Heart rate hit 185 max"
+expect:
+  toolCalls:
+    - name: log_workout
+      args:
+        activityType: "cardio"
+        rounds: 8
+        heartRate: 185
+  checks:
+    - "HIIT"
+    - "8 rounds"
+    - "185"
+    - "heart rate"
+    - "intervals"

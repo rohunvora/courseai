@@ -1,0 +1,21 @@
+id: mixed_training_day
+context:
+  topic: "CrossFit Style Training"
+  currentWeek: 15
+  lastWorkoutDays: 1
+userMessages:
+  - "Today's WOD: 21-15-9 thrusters @ 95lbs and pull-ups. Time: 7:23"
+  - "Then did 5k row in 22:15"
+expect:
+  toolCalls:
+    - name: log_workout
+      args:
+        activityType: "mixed"
+        exercises: ["thrusters", "pull-ups", "rowing"]
+  checks:
+    - "21-15-9"
+    - "7:23"
+    - "thrusters"
+    - "95"
+    - "5k row"
+    - "22:15"

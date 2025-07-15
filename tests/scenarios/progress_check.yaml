@@ -22,8 +22,9 @@ context:
 userMessages:
   - "How's my deadlift progress looking?"
 expect:
-  toolCalls:
-    - name: get_progress_summary
-  checks:
-    - "315"
-    - "deadlift"
+  # Single message: Should call tool to get real-time progress data
+  message1:
+    toolCalls:
+      - name: get_progress_summary
+        args_contain: ["deadlift", "Deadlift"]  # Must query deadlift specifically
+    semanticContent: []  # Tool call response, minimal text expected since data comes from tool

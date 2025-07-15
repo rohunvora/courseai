@@ -137,8 +137,9 @@ export class MemoryService {
       // Use cosine similarity with pgvector
       const similarityQuery = sql`1 - (${userMemory.embedding} <=> ${JSON.stringify(queryEmbedding)}::vector)`;
       
-      // Fetch relevant memories
-      const memories = await db
+      // Hybrid approach: relevance + recency to avoid stale but high-cosine memories
+      // Step 1: Get top 20 by cosine similarity
+      const candidateMemories = await db
         .select({
           id: userMemory.id,
           content: userMemory.content,
@@ -149,13 +150,22 @@ export class MemoryService {
         .from(userMemory)
         .where(whereClause)
         .orderBy(desc(similarityQuery))
-        .limit(limit * 2); // Fetch extra to account for token limit
+        .limit(20); // Get top 20 by relevance first
       
-      // Filter by token budget
+      // Step 2: Sort those 20 by timestamp desc (most recent first)
+      const recentRelevantMemories = candidateMemories
+        .sort((a, b) => {
+          const dateA = a.createdAt || new Date(0);
+          const dateB = b.createdAt || new Date(0);
+          return dateB.getTime() - dateA.getTime();
+        });
+      
+      // Step 3: Take first 8 and apply token budget
+      const maxMemories = Math.min(8, limit);
       let tokenCount = 0;
       const filteredMemories: RelevantMemory[] = [];
       
-      for (const memory of memories) {
+      for (const memory of recentRelevantMemories.slice(0, maxMemories)) {
         const memoryTokens = this.estimateTokens(memory.content);
         if (tokenCount + memoryTokens > tokenBudget) break;
         

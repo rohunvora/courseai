@@ -70,7 +70,7 @@ export async function chatRoutesWithTools(fastify: FastifyInstance) {
       });
       
       // Add memories to message context as assistant context (no system messages for OpenAI service)
-      const memoryContextString = relevantMemories.length > 0 
+      const _memoryContextString = relevantMemories.length > 0 
         ? `Previous context: ${relevantMemories.map(m => m.content).join('; ')}`
         : '';
       

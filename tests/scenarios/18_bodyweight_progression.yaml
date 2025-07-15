@@ -1,0 +1,22 @@
+id: bodyweight_progression
+context:
+  topic: "Calisthenics"
+  currentWeek: 8
+  lastWorkoutDays: 1
+  recentWorkouts:
+    - exercise: "Pull-ups"
+      sets: 3
+      reps: [8, 7, 6]
+      timestamp: "2025-07-14T10:00:00Z"
+userMessages:
+  - "Finally hit 8 pull-ups on first set!"
+  - "When should I add weight?"
+expect:
+  toolCalls:
+    - name: log_workout
+  checks:
+    - "8 pull-ups"
+    - "great progress"
+    - "10-12 reps"
+    - "weight"
+    - "progression"

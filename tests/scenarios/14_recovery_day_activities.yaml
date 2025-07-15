@@ -1,0 +1,24 @@
+id: recovery_day_activities
+context:
+  topic: "General Fitness"
+  currentWeek: 7
+  lastWorkoutDays: 0
+  recentWorkouts:
+    - exercise: "Heavy Squats"
+      sets: 5
+      reps: [3, 3, 3, 3, 3]
+      weight: "275 lbs"
+      timestamp: "2025-07-15T06:00:00Z"
+  memories:
+    - content: "Legs usually sore for 2 days after heavy squats"
+userMessages:
+  - "Legs are destroyed from yesterday"
+  - "Should I do anything today or full rest?"
+expect:
+  toolCalls: []
+  checks:
+    - "recovery"
+    - "active"
+    - "walk"
+    - "stretch"
+    - "mobility"

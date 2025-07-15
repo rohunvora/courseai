@@ -1,0 +1,32 @@
+id: returner_10_day_break
+context:
+  topic: "General Fitness"
+  currentWeek: 15
+  lastWorkoutDays: 10
+  personalRecords:
+    - exercise: "Squat"
+      weight: "225"
+      unit: "lbs"
+  recentWorkouts:
+    - exercise: "Squat"
+      sets: 3
+      reps: [5, 5, 5]
+      weight: "205 lbs"
+      timestamp: "2025-07-05T10:00:00Z"
+  memories:
+    - content: "Consistent training for 3 months"
+    - content: "Previous max squat: 225 lbs"
+userMessages:
+  - "I'm back!"
+  - "Did 20-min Peloton ride."
+expect:
+  toolCalls:
+    - name: log_workout
+      args:
+        activityType: "cardio"
+        duration: "20 minutes"
+  checks:
+    - "welcome back"
+    - "10 days"
+    - "ease back"
+    - "70-80%"

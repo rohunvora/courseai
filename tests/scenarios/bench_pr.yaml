@@ -19,10 +19,17 @@ userMessages:
   - "I just benched 3x5 at 185. Felt really solid!"
   - "What's my bench PR now?"
 expect:
-  toolCalls:
-    - name: log_workout
-    - name: get_progress_summary
-  checks:
-    - "185"
-    - "personal record"
-    - "PR"
+  # First message: Should ask permission or offer to log
+  message1:
+    toolCalls: []  # Should ask before logging, not immediately log
+    semanticContent:
+      - weight_acknowledgment: ["185", "185 lbs", "3 sets of 5", "3x5"]  # Must acknowledge the workout
+      - achievement_recognition: ["personal record", "PR", "matching your", "solid", "fantastic", "great achievement", "awesome"]  # Must recognize achievement
+      - logging_offer: ["log", "track", "record", "would you like"]  # Should offer to log
+  
+  # Second message: Should call tool to get real-time data
+  message2:
+    toolCalls:
+      - name: get_progress_summary
+        args_contain: ["personal_records", "bench press", "Bench Press"]
+    semanticContent: []  # Tool call response, minimal text expected

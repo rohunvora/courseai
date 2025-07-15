@@ -1,0 +1,31 @@
+id: overtraining_signs
+context:
+  topic: "High Volume Training"
+  currentWeek: 12
+  lastWorkoutDays: 0
+  recentWorkouts:
+    - exercise: "Various"
+      timestamp: "2025-07-15T10:00:00Z"
+    - exercise: "Various"
+      timestamp: "2025-07-14T10:00:00Z"
+    - exercise: "Various"
+      timestamp: "2025-07-13T10:00:00Z"
+    - exercise: "Various"
+      timestamp: "2025-07-12T10:00:00Z"
+    - exercise: "Various"
+      timestamp: "2025-07-11T10:00:00Z"
+  memories:
+    - content: "Training 6 days per week"
+    - content: "Recent complaints: fatigue, poor sleep"
+userMessages:
+  - "Everything feels heavy lately"
+  - "Motivation is really low and I'm tired all the time"
+expect:
+  toolCalls: []
+  checks:
+    - "overtraining"
+    - "rest"
+    - "recovery"
+    - "deload"
+    - "fatigue"
+    - "days off"

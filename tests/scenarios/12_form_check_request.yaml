@@ -1,0 +1,17 @@
+id: form_check_request
+context:
+  topic: "Olympic Lifting"
+  currentWeek: 4
+  lastWorkoutDays: 0
+  currentExercise: "Clean and Jerk"
+userMessages:
+  - "My clean feels off. Bar keeps drifting forward"
+  - "Should I drop weight to work on form?"
+expect:
+  toolCalls: []
+  checks:
+    - "bar path"
+    - "drift"
+    - "form"
+    - "reduce weight"
+    - "technique"

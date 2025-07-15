@@ -1,9 +1,22 @@
 {
-  "name": "courseai-frontend",
+  "name": "courseai-preview",
   "version": 2,
-  "public": true,
+  "public": false,
   "github": {
-    "enabled": false
+    "enabled": true,
+    "autoAlias": true,
+    "silent": false
+  },
+  "git": {
+    "deploymentEnabled": {
+      "main": false,
+      "branches": true
+    }
+  },
+  "build": {
+    "env": {
+      "VITE_ENABLE_PREVIEW_FEATURES": "true"
+    }
   },
   "builds": [
     {
@@ -12,9 +25,17 @@
       "config": {
         "distDir": "dist"
       }
+    },
+    {
+      "src": "api/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/demo.js"
+    },
     {
       "src": "/(.*)",
       "dest": "/frontend/dist/$1"

@@ -155,6 +155,57 @@ export const toolCalls = pgTable('tool_calls', {
   createdAtIdx: index('idx_tool_calls_created_at').on(table.createdAt),
 }));
 
+export const qualityMetrics = pgTable('quality_metrics', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  sessionId: uuid('session_id').references(() => sessions.id),
+  promptVariantId: varchar('prompt_variant_id', { length: 50 }).notNull(),
+  modelUsed: varchar('model_used', { length: 50 }).notNull(),
+  promptTokens: integer('prompt_tokens').notNull(),
+  completionTokens: integer('completion_tokens').notNull(),
+  totalTokens: integer('total_tokens').notNull(),
+  responseTimeMs: integer('response_time_ms').notNull(),
+  specificityScore: real('specificity_score'), // 0.0 to 1.0
+  toolCallCount: integer('tool_call_count').default(0),
+  toolCallAccuracy: real('tool_call_accuracy'), // 0.0 to 1.0
+  safetyViolation: boolean('safety_violation').default(false),
+  errorCode: varchar('error_code', { length: 50}), // null if no error
+  requestHash: varchar('request_hash', { length: 64}), // SHA-256 for deduplication
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => ({
+  userIdIdx: index('idx_quality_metrics_user_id').on(table.userId),
+  variantIdx: index('idx_quality_metrics_variant').on(table.promptVariantId),
+  modelIdx: index('idx_quality_metrics_model').on(table.modelUsed),
+  createdAtIdx: index('idx_quality_metrics_created_at').on(table.createdAt),
+  tokensIdx: index('idx_quality_metrics_tokens').on(table.totalTokens),
+  safetyIdx: index('idx_quality_metrics_safety').on(table.safetyViolation),
+}));
+
+// Immutable action logs for audit integrity - append-only with SHA-256 hash
+export const actionLogs = pgTable('action_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  sessionId: uuid('session_id').references(() => sessions.id),
+  courseId: uuid('course_id').references(() => courses.id),
+  toolName: varchar('tool_name', { length: 100 }).notNull(),
+  functionCallJson: jsonb('function_call_json').notNull(), // Complete function call payload
+  executionTimeMs: integer('execution_time_ms'),
+  status: varchar('status', { length: 20 }).notNull(),
+  errorCode: varchar('error_code', { length: 50 }),
+  requestId: varchar('request_id', { length: 50 }),
+  // SHA-256 hash generated automatically from function_call_json
+  payloadHash: varchar('payload_hash', { length: 64 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('idx_action_logs_user_id').on(table.userId),
+  sessionIdIdx: index('idx_action_logs_session_id').on(table.sessionId),
+  toolNameIdx: index('idx_action_logs_tool_name').on(table.toolName),
+  statusIdx: index('idx_action_logs_status').on(table.status),
+  hashIdx: index('idx_action_logs_hash').on(table.payloadHash),
+  createdAtIdx: index('idx_action_logs_created_at').on(table.createdAt),
+  userTimeIdx: index('idx_action_logs_user_time').on(table.userId, table.createdAt),
+}));
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   courses: many(courses),
@@ -162,6 +213,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   progressLogs: many(progressLogs),
   userMemory: many(userMemory),
   toolCalls: many(toolCalls),
+  qualityMetrics: many(qualityMetrics),
+  actionLogs: many(actionLogs),
 }));
 
 export const coursesRelations = relations(courses, ({ one, many }) => ({
@@ -172,6 +225,7 @@ export const coursesRelations = relations(courses, ({ one, many }) => ({
   curriculum: many(curriculum),
   userMemory: many(userMemory),
   toolCalls: many(toolCalls),
+  actionLogs: many(actionLogs),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
@@ -180,6 +234,7 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
   chatHistory: many(chatHistory),
   progressLogs: many(progressLogs),
   toolCalls: many(toolCalls),
+  actionLogs: many(actionLogs),
 }));
 
 export const chatHistoryRelations = relations(chatHistory, ({ one }) => ({
@@ -206,4 +261,15 @@ export const toolCallsRelations = relations(toolCalls, ({ one }) => ({
   user: one(users, { fields: [toolCalls.userId], references: [users.id] }),
   course: one(courses, { fields: [toolCalls.courseId], references: [courses.id] }),
   session: one(sessions, { fields: [toolCalls.sessionId], references: [sessions.id] }),
+}));
+
+export const qualityMetricsRelations = relations(qualityMetrics, ({ one }) => ({
+  user: one(users, { fields: [qualityMetrics.userId], references: [users.id] }),
+  session: one(sessions, { fields: [qualityMetrics.sessionId], references: [sessions.id] }),
+}));
+
+export const actionLogsRelations = relations(actionLogs, ({ one }) => ({
+  user: one(users, { fields: [actionLogs.userId], references: [users.id] }),
+  session: one(sessions, { fields: [actionLogs.sessionId], references: [sessions.id] }),
+  course: one(courses, { fields: [actionLogs.courseId], references: [courses.id] }),
 }));

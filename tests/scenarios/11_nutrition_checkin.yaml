@@ -1,0 +1,21 @@
+id: nutrition_checkin
+context:
+  topic: "Muscle Building"
+  currentWeek: 8
+  lastWorkoutDays: 0
+  memories:
+    - content: "Goal: Gain 0.5 lbs per week"
+    - content: "Target: 180g protein daily"
+    - content: "Last nutrition check: 2 weeks ago"
+userMessages:
+  - "Been eating around 150g protein lately"
+  - "Weight hasn't changed in 2 weeks"
+expect:
+  toolCalls: []
+  checks:
+    - "150g"
+    - "180g"
+    - "30g"
+    - "increase"
+    - "protein"
+    - "muscle"

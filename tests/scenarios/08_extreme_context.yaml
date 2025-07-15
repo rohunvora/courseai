@@ -1,0 +1,49 @@
+id: extreme_context
+context:
+  topic: "Strength Training"
+  currentWeek: 50
+  lastWorkoutDays: 1
+  # Generate 100 memories to test pruning
+  memories:
+    - content: "Week 1: Started with bar only squats"
+    - content: "Week 2: Added 10 lbs to squat"
+    - content: "Week 3: First time benching 95 lbs"
+    - content: "Week 4: Deadlift form check session"
+    - content: "Week 5: PR on bench press 105 lbs"
+    - content: "Week 6: Started 5x5 program"
+    - content: "Week 7: Squat reached 135 lbs"
+    - content: "Week 8: First deload week"
+    - content: "Week 9: Bench press 115 lbs"
+    - content: "Week 10: Deadlift 185 lbs PR"
+    - content: "Week 11: Added accessory work"
+    - content: "Week 12: Squat 155 lbs"
+    - content: "Week 13: Bench press plateau at 125"
+    - content: "Week 14: Started eating more protein"
+    - content: "Week 15: Deadlift 205 lbs"
+    - content: "Week 16: Deload week 2"
+    - content: "Week 17: Bench press breakthrough 135 lbs"
+    - content: "Week 18: Squat 175 lbs"
+    - content: "Week 19: Added cardio 2x week"
+    - content: "Week 20: Deadlift 225 lbs milestone"
+    # ... would continue to 100 entries in real test
+  personalRecords:
+    - exercise: "Squat"
+      weight: "275"
+      unit: "lbs"
+    - exercise: "Bench Press"
+      weight: "185"
+      unit: "lbs"
+    - exercise: "Deadlift"
+      weight: "315"
+      unit: "lbs"
+userMessages:
+  - "Summarise my yearly progress."
+expect:
+  checks:
+    - "year"
+    - "progress"
+    - "275"  # Should mention current PRs
+    - "started"
+  performance:
+    maxTokens: 1500
+    maxLatencyMs: 4000

@@ -1,0 +1,20 @@
+id: time_constrained_workout
+context:
+  topic: "Full Body Training"
+  currentWeek: 9
+  lastWorkoutDays: 3
+  memories:
+    - content: "Usually trains for 60-75 minutes"
+    - content: "Full body routine: squats, bench, rows, accessories"
+userMessages:
+  - "Only have 30 minutes today"
+  - "What should I prioritize?"
+expect:
+  toolCalls: []
+  checks:
+    - "30 minutes"
+    - "compound"
+    - "prioritize"
+    - "squat"
+    - "bench"
+    - "superset"

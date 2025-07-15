@@ -1,0 +1,16 @@
+id: no_tools_mode
+context:
+  topic: "Cardio Training"
+  currentWeek: 5
+  lastWorkoutDays: 1
+  toolsEnabled: false  # Special flag for testing
+userMessages:
+  - "Just ran 5k."
+expect:
+  toolCalls: []  # No tools available
+  checks:
+    - "manual"
+    - "template"
+    - "Date:"
+    - "Exercise:"
+    - "copy"

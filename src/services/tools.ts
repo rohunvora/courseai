@@ -2,6 +2,11 @@ import { db } from '../db';
 import { progressLogs, toolCalls, courses } from '../db/schema';
 import { OpenAI } from 'openai';
 import { eq, and, gte } from 'drizzle-orm';
+import { ValidationError } from '../middleware/errorHandler.js';
+import { actionLogger } from './action-logger.js';
+import { InputValidator } from './input-validator.js';
+import { safetyValidator } from './safety-validator.js';
+import { securityMonitor } from './security-monitor.js';
 
 export interface WorkoutLog {
   exercise: string;
@@ -150,6 +155,33 @@ export const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
+// Unit conversion utilities  
+function validateAndNormalizeUnits(weight: number[], unit?: string): { weight: number[]; unit: 'lbs' } {
+  if (!unit) {
+    throw new ValidationError('Unit must be specified when logging weight. Use "kg" or "lbs".', { 
+      code: 'MISSING_UNIT',
+      field: 'unit' 
+    });
+  }
+  
+  if (unit !== 'kg' && unit !== 'lbs') {
+    throw new ValidationError('Invalid unit. Must be "kg" or "lbs".', {
+      code: 'INVALID_UNIT',
+      field: 'unit',
+      provided: unit,
+      allowed: ['kg', 'lbs']
+    });
+  }
+  
+  // Normalize everything to lbs for consistent storage
+  if (unit === 'kg') {
+    const convertedWeight = weight.map(w => Math.round(w * 2.20462 * 100) / 100); // kg to lbs, rounded to 2 decimals
+    return { weight: convertedWeight, unit: 'lbs' };
+  }
+  
+  return { weight, unit: 'lbs' };
+}
+
 export async function executeLogWorkout(
   params: WorkoutLog,
   context: {
@@ -160,21 +192,95 @@ export async function executeLogWorkout(
 ): Promise<{ success: boolean; id?: string; error?: string }> {
   const startTime = Date.now();
   
+  // Log function call to immutable action_logs (start)
+  const actionLogId = await actionLogger.logAction({
+    userId: context.userId,
+    sessionId: context.sessionId,
+    courseId: context.courseId,
+    toolName: 'log_workout',
+    functionCallJson: {
+      function: 'log_workout',
+      parameters: params,
+      context: context,
+      timestamp: new Date().toISOString(),
+    },
+    status: 'pending',
+    requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+  });
+  
   try {
-    // Validate parameters
-    if (!params.exercise || !params.sets || !params.reps) {
-      throw new Error('Missing required parameters: exercise, sets, and reps are required');
+    // Security monitoring - request rate
+    if (!securityMonitor.monitorRequestRate(context.userId)) {
+      throw new ValidationError('Too many requests detected. Please slow down.', {
+        code: 'RATE_LIMITED',
+        retryAfter: 60
+      });
     }
 
-    if (params.reps.length !== params.sets) {
-      throw new Error(`Reps array length (${params.reps.length}) must match number of sets (${params.sets})`);
+    // Basic rate limiting check
+    if (!InputValidator.checkRateLimit(context.userId)) {
+      throw new ValidationError('Too many requests. Please wait 1 second between workout logs.', {
+        code: 'RATE_LIMITED',
+        retryAfter: 1
+      });
     }
 
-    if (params.weight && params.weight.length !== params.sets) {
-      throw new Error(`Weight array length (${params.weight.length}) must match number of sets (${params.sets})`);
+    // Comprehensive input validation
+    const validation = InputValidator.validateWorkoutInput(params);
+    if (!validation.isValid) {
+      throw new ValidationError(`Invalid workout data: ${validation.errors.join(', ')}`, {
+        code: 'INVALID_INPUT',
+        errors: validation.errors
+      });
+    }
+    
+    // Use sanitized parameters
+    const sanitizedParams = validation.sanitized!;
+    
+    // Safety validation for weight progression
+    if (sanitizedParams.weight && sanitizedParams.weight.length > 0) {
+      const maxProposedWeight = Math.max(...sanitizedParams.weight);
+      const safetyCheck = await safetyValidator.validateWorkoutProgression(
+        context.userId,
+        context.courseId,
+        sanitizedParams.exercise,
+        maxProposedWeight,
+        sanitizedParams.unit
+      );
+      
+      if (!safetyCheck.safe) {
+        // Alert security monitor
+        securityMonitor.monitorSafetyBypass(
+          context.userId, 
+          safetyCheck.reason || 'Unsafe progression',
+          {
+            exercise: sanitizedParams.exercise,
+            proposedWeight: maxProposedWeight,
+            maxSafeWeight: safetyCheck.maxSafeWeight,
+            increasePercent: safetyCheck.maxSafeWeight ? 
+              ((maxProposedWeight - safetyCheck.maxSafeWeight) / safetyCheck.maxSafeWeight * 100) : 0
+          }
+        );
+        
+        throw new ValidationError(`Unsafe progression detected: ${safetyCheck.reason}`, {
+          code: 'UNSAFE_PROGRESSION',
+          maxSafeWeight: safetyCheck.maxSafeWeight,
+          proposedWeight: maxProposedWeight
+        });
+      }
+    }
+    
+    // Validate and normalize units (kg -> lbs conversion)
+    let normalizedWeight = sanitizedParams.weight;
+    let normalizedUnit = 'lbs';
+    
+    if (sanitizedParams.weight && sanitizedParams.weight.length > 0) {
+      const normalized = validateAndNormalizeUnits(sanitizedParams.weight, sanitizedParams.unit);
+      normalizedWeight = normalized.weight;
+      normalizedUnit = normalized.unit;
     }
 
-    // Create progress log entry
+    // Create progress log entry with normalized values
     const [result] = await db
       .insert(progressLogs)
       .values({
@@ -183,21 +289,22 @@ export async function executeLogWorkout(
         sessionId: context.sessionId,
         activityType: 'exercise',
         data: {
-          exercise: params.exercise,
-          sets: params.sets,
-          reps: params.reps,
-          weight: params.weight,
-          unit: params.unit || 'lbs',
-          duration: params.duration,
+          exercise: sanitizedParams.exercise,
+          sets: sanitizedParams.sets,
+          reps: sanitizedParams.reps,
+          weight: normalizedWeight,
+          unit: normalizedUnit, // Always 'lbs' after normalization
+          originalUnit: sanitizedParams.unit, // Store original unit for reference
+          duration: sanitizedParams.duration,
         },
         metrics: {
-          totalVolume: params.weight
-            ? params.weight.reduce((acc, w, i) => acc + w * params.reps[i], 0)
+          totalVolume: normalizedWeight
+            ? normalizedWeight.reduce((acc, w, i) => acc + w * sanitizedParams.reps[i], 0)
             : null,
-          totalReps: params.reps.reduce((acc, r) => acc + r, 0),
-          maxWeight: params.weight ? Math.max(...params.weight) : null,
+          totalReps: sanitizedParams.reps.reduce((acc, r) => acc + r, 0),
+          maxWeight: normalizedWeight ? Math.max(...normalizedWeight) : null,
         },
-        notes: params.notes,
+        notes: sanitizedParams.notes,
       })
       .returning({ id: progressLogs.id });
 
@@ -207,15 +314,35 @@ export async function executeLogWorkout(
       courseId: context.courseId,
       sessionId: context.sessionId,
       toolName: 'log_workout',
-      parameters: params,
+      parameters: sanitizedParams,
       result: { success: true, id: result.id },
       status: 'success',
       executionTime: Date.now() - startTime,
     });
 
+    // Update immutable action log with success result
+    await actionLogger.logAction({
+      userId: context.userId,
+      sessionId: context.sessionId,
+      courseId: context.courseId,
+      toolName: 'log_workout',
+      functionCallJson: {
+        function: 'log_workout',
+        parameters: params,
+        context: context,
+        result: { success: true, id: result.id },
+        timestamp: new Date().toISOString(),
+        executionTimeMs: Date.now() - startTime,
+      },
+      executionTimeMs: Date.now() - startTime,
+      status: 'success',
+      requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+    });
+
     return { success: true, id: result.id };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorCode = error instanceof ValidationError ? error.details?.code : 'TOOL_ERROR';
     
     // Log the failed tool call
     await db.insert(toolCalls).values({
@@ -223,11 +350,31 @@ export async function executeLogWorkout(
       courseId: context.courseId,
       sessionId: context.sessionId,
       toolName: 'log_workout',
-      parameters: params,
+      parameters: sanitizedParams,
       result: { success: false, error: errorMessage },
       status: 'failed',
       error: errorMessage,
       executionTime: Date.now() - startTime,
+    });
+
+    // Update immutable action log with failure result
+    await actionLogger.logAction({
+      userId: context.userId,
+      sessionId: context.sessionId,
+      courseId: context.courseId,
+      toolName: 'log_workout',
+      functionCallJson: {
+        function: 'log_workout',
+        parameters: params,
+        context: context,
+        result: { success: false, error: errorMessage },
+        timestamp: new Date().toISOString(),
+        executionTimeMs: Date.now() - startTime,
+      },
+      executionTimeMs: Date.now() - startTime,
+      status: 'failed',
+      errorCode,
+      requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
     });
 
     return { success: false, error: errorMessage };
@@ -239,6 +386,22 @@ export async function executeUpdateProgress(
   context: { userId: string; courseId: string; sessionId?: string }
 ): Promise<{ success: boolean; updated?: any; error?: string }> {
   const startTime = Date.now();
+  
+  // Log function call to immutable action_logs (start)
+  await actionLogger.logAction({
+    userId: context.userId,
+    sessionId: context.sessionId,
+    courseId: context.courseId,
+    toolName: 'update_progress',
+    functionCallJson: {
+      function: 'update_progress',
+      parameters: params,
+      context: context,
+      timestamp: new Date().toISOString(),
+    },
+    status: 'pending',
+    requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+  });
   
   try {
     // Get the existing log to verify ownership
@@ -297,9 +460,29 @@ export async function executeUpdateProgress(
       executionTime: Date.now() - startTime,
     });
 
+    // Update immutable action log with success result
+    await actionLogger.logAction({
+      userId: context.userId,
+      sessionId: context.sessionId,
+      courseId: context.courseId,
+      toolName: 'update_progress',
+      functionCallJson: {
+        function: 'update_progress',
+        parameters: params,
+        context: context,
+        result: { success: true, updated },
+        timestamp: new Date().toISOString(),
+        executionTimeMs: Date.now() - startTime,
+      },
+      executionTimeMs: Date.now() - startTime,
+      status: 'success',
+      requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+    });
+
     return { success: true, updated };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorCode = error instanceof ValidationError ? error.details?.code : 'TOOL_ERROR';
     
     await db.insert(toolCalls).values({
       userId: context.userId,
@@ -313,6 +496,26 @@ export async function executeUpdateProgress(
       executionTime: Date.now() - startTime,
     });
 
+    // Update immutable action log with failure result
+    await actionLogger.logAction({
+      userId: context.userId,
+      sessionId: context.sessionId,
+      courseId: context.courseId,
+      toolName: 'update_progress',
+      functionCallJson: {
+        function: 'update_progress',
+        parameters: params,
+        context: context,
+        result: { success: false, error: errorMessage },
+        timestamp: new Date().toISOString(),
+        executionTimeMs: Date.now() - startTime,
+      },
+      executionTimeMs: Date.now() - startTime,
+      status: 'failed',
+      errorCode,
+      requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+    });
+
     return { success: false, error: errorMessage };
   }
 }
@@ -322,6 +525,22 @@ export async function executeGetProgressSummary(
   context: { userId: string; courseId: string; sessionId?: string }
 ): Promise<{ success: boolean; summary?: any; error?: string }> {
   const startTime = Date.now();
+  
+  // Log function call to immutable action_logs (start)
+  await actionLogger.logAction({
+    userId: context.userId,
+    sessionId: context.sessionId,
+    courseId: context.courseId,
+    toolName: 'get_progress_summary',
+    functionCallJson: {
+      function: 'get_progress_summary',
+      parameters: params,
+      context: context,
+      timestamp: new Date().toISOString(),
+    },
+    status: 'pending',
+    requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+  });
   
   try {
     // Calculate date range based on timeframe
@@ -426,9 +645,29 @@ export async function executeGetProgressSummary(
       executionTime: Date.now() - startTime,
     });
 
+    // Update immutable action log with success result
+    await actionLogger.logAction({
+      userId: context.userId,
+      sessionId: context.sessionId,
+      courseId: context.courseId,
+      toolName: 'get_progress_summary',
+      functionCallJson: {
+        function: 'get_progress_summary',
+        parameters: params,
+        context: context,
+        result: { success: true, summary },
+        timestamp: new Date().toISOString(),
+        executionTimeMs: Date.now() - startTime,
+      },
+      executionTimeMs: Date.now() - startTime,
+      status: 'success',
+      requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+    });
+
     return { success: true, summary };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorCode = error instanceof ValidationError ? error.details?.code : 'TOOL_ERROR';
     
     await db.insert(toolCalls).values({
       userId: context.userId,
@@ -442,6 +681,26 @@ export async function executeGetProgressSummary(
       executionTime: Date.now() - startTime,
     });
 
+    // Update immutable action log with failure result
+    await actionLogger.logAction({
+      userId: context.userId,
+      sessionId: context.sessionId,
+      courseId: context.courseId,
+      toolName: 'get_progress_summary',
+      functionCallJson: {
+        function: 'get_progress_summary',
+        parameters: params,
+        context: context,
+        result: { success: false, error: errorMessage },
+        timestamp: new Date().toISOString(),
+        executionTimeMs: Date.now() - startTime,
+      },
+      executionTimeMs: Date.now() - startTime,
+      status: 'failed',
+      errorCode,
+      requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+    });
+
     return { success: false, error: errorMessage };
   }
 }
@@ -451,6 +710,22 @@ export async function executeUpdateCourseGoal(
   context: { userId: string; courseId: string; sessionId?: string }
 ): Promise<{ success: boolean; updated?: any; error?: string }> {
   const startTime = Date.now();
+  
+  // Log function call to immutable action_logs (start)
+  await actionLogger.logAction({
+    userId: context.userId,
+    sessionId: context.sessionId,
+    courseId: context.courseId,
+    toolName: 'update_course_goal',
+    functionCallJson: {
+      function: 'update_course_goal',
+      parameters: params,
+      context: context,
+      timestamp: new Date().toISOString(),
+    },
+    status: 'pending',
+    requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+  });
   
   try {
     // Verify course ownership
@@ -503,9 +778,29 @@ export async function executeUpdateCourseGoal(
       executionTime: Date.now() - startTime,
     });
 
+    // Update immutable action log with success result
+    await actionLogger.logAction({
+      userId: context.userId,
+      sessionId: context.sessionId,
+      courseId: context.courseId,
+      toolName: 'update_course_goal',
+      functionCallJson: {
+        function: 'update_course_goal',
+        parameters: params,
+        context: context,
+        result: { success: true, updated },
+        timestamp: new Date().toISOString(),
+        executionTimeMs: Date.now() - startTime,
+      },
+      executionTimeMs: Date.now() - startTime,
+      status: 'success',
+      requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+    });
+
     return { success: true, updated };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorCode = error instanceof ValidationError ? error.details?.code : 'TOOL_ERROR';
     
     await db.insert(toolCalls).values({
       userId: context.userId,
@@ -517,6 +812,26 @@ export async function executeUpdateCourseGoal(
       status: 'failed',
       error: errorMessage,
       executionTime: Date.now() - startTime,
+    });
+
+    // Update immutable action log with failure result
+    await actionLogger.logAction({
+      userId: context.userId,
+      sessionId: context.sessionId,
+      courseId: context.courseId,
+      toolName: 'update_course_goal',
+      functionCallJson: {
+        function: 'update_course_goal',
+        parameters: params,
+        context: context,
+        result: { success: false, error: errorMessage },
+        timestamp: new Date().toISOString(),
+        executionTimeMs: Date.now() - startTime,
+      },
+      executionTimeMs: Date.now() - startTime,
+      status: 'failed',
+      errorCode,
+      requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
     });
 
     return { success: false, error: errorMessage };

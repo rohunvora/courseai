@@ -1,0 +1,25 @@
+id: deload_week
+context:
+  topic: "Strength Training"
+  currentWeek: 12  # Every 4th week is deload
+  lastWorkoutDays: 1
+  recentWorkouts:
+    - exercise: "Squat"
+      sets: 5
+      reps: [5, 5, 5, 5, 5]
+      weight: "225 lbs"
+      timestamp: "2025-07-14T10:00:00Z"
+  memories:
+    - content: "Following 5/3/1 program"
+    - content: "Deload every 4th week at 60% intensity"
+userMessages:
+  - "Is this week a deload week?"
+  - "Squats feel heavy today"
+expect:
+  toolCalls: []
+  checks:
+    - "week 12"
+    - "deload"
+    - "60%"
+    - "135"  # 60% of 225
+    - "recovery"

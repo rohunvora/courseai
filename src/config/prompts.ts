@@ -1,6 +1,6 @@
 export interface PromptVariant {
   id: string;
-  tone: 'trainer_friend' | 'strict_coach' | 'science_nerd';
+  tone: 'trainer_friend' | 'strict_coach' | 'science_nerd' | 'elite_mentor' | 'adaptive_coach' | 'precision_trainer';
   memoryLoad: 'full' | 'summary' | 'recent_only';
   loggingOffer: 'always' | 'metric_detected' | 'user_initiated';
   safetyLevel: 'short' | 'detailed' | 'contextual';
@@ -48,6 +48,21 @@ export const TONE_VARIANTS = {
     greeting: "Let's optimize your training stimulus today!",
     celebration: "Excellent progressive overload application!",
     encouragement: "Remember: consistency drives adaptation."
+  },
+  elite_mentor: {
+    greeting: "Outstanding to see you here! What's our focus today?",
+    celebration: "Exceptional execution - that's champion-level work!",
+    encouragement: "Every rep builds the athlete you're becoming."
+  },
+  adaptive_coach: {
+    greeting: "Great to connect! How are you feeling today?",
+    celebration: "Impressive progress - you're really dialing this in!",
+    encouragement: "Trust the process - you're exactly where you need to be."
+  },
+  precision_trainer: {
+    greeting: "Perfect timing! Let's make today count.",
+    celebration: "Outstanding technique and control!",
+    encouragement: "Quality over quantity - you're mastering this."
   }
 };
 
@@ -77,6 +92,9 @@ Core traits:
 - ${variant.tone === 'trainer_friend' ? 'Encouraging friend who celebrates every win' : ''}
 - ${variant.tone === 'strict_coach' ? 'No-nonsense coach focused on discipline' : ''}
 - ${variant.tone === 'science_nerd' ? 'Evidence-based trainer who explains the "why"' : ''}
+- ${variant.tone === 'elite_mentor' ? 'Elite-level coach who sees potential and builds champions' : ''}
+- ${variant.tone === 'adaptive_coach' ? 'Emotionally intelligent coach who adapts to user energy' : ''}
+- ${variant.tone === 'precision_trainer' ? 'Technical expert focused on perfect execution and mastery' : ''}
 - Technical when discussing form and programming
 - Never judgmental about setbacks
 
@@ -277,10 +295,16 @@ export const selectPromptVariant = (userId: string, sessionId: string, segment: 
 const getVariantsForSegment = (segment: UserSegment): PromptVariant[] => {
   // Define variants based on segment
   const baseVariants: PromptVariant[] = [
+    // Original variants
     { id: 'v1', tone: 'trainer_friend', memoryLoad: 'full', loggingOffer: 'metric_detected', safetyLevel: 'short' },
     { id: 'v2', tone: 'strict_coach', memoryLoad: 'summary', loggingOffer: 'metric_detected', safetyLevel: 'short' },
     { id: 'v3', tone: 'science_nerd', memoryLoad: 'full', loggingOffer: 'metric_detected', safetyLevel: 'detailed' },
-    { id: 'v4', tone: 'trainer_friend', memoryLoad: 'recent_only', loggingOffer: 'always', safetyLevel: 'contextual' }
+    { id: 'v4', tone: 'trainer_friend', memoryLoad: 'recent_only', loggingOffer: 'always', safetyLevel: 'contextual' },
+    
+    // New optimized variants
+    { id: 'v5', tone: 'elite_mentor', memoryLoad: 'full', loggingOffer: 'metric_detected', safetyLevel: 'detailed' },
+    { id: 'v6', tone: 'adaptive_coach', memoryLoad: 'summary', loggingOffer: 'user_initiated', safetyLevel: 'contextual' },
+    { id: 'v7', tone: 'precision_trainer', memoryLoad: 'full', loggingOffer: 'metric_detected', safetyLevel: 'detailed' }
   ];
   
   // Customize based on segment

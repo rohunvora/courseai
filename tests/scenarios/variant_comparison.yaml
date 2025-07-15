@@ -1,0 +1,36 @@
+id: variant_comparison
+context:
+  topic: "Strength Training"
+  currentWeek: 12
+  lastWorkoutDays: 2
+  recentWorkouts:
+    - exercise: "Deadlift"
+      sets: 4
+      reps: [5, 5, 5, 3]
+      weight: "295 lbs"
+      timestamp: "2025-07-13T10:00:00Z"
+      totalVolume: 5605
+  personalRecords:
+    - exercise: "Deadlift"
+      weight: "315"
+      unit: "lbs"
+      date: "2025-06-15"
+    - exercise: "Bench Press"
+      weight: "185"
+      unit: "lbs"
+      date: "2025-07-10"
+  memories:
+    - content: "User mentioned wanting to hit 300lb deadlift soon"
+    - content: "Has been consistent for 3 months"
+    - content: "Prefers morning workouts"
+userMessages:
+  - "I hit 295 for 4x5,5,5,3 yesterday but felt like I had more in the tank. Should I test my max soon?"
+expect:
+  # This should showcase different coaching styles and decision-making
+  message1:
+    toolCalls: []  # Should provide coaching advice first
+    semanticContent:
+      - progress_acknowledgment: ["295", "progress", "improvement", "strong"]
+      - coaching_insight: ["more in tank", "felt strong", "conservative", "smart"]
+      - guidance_quality: ["when", "how", "plan", "approach"]  # Should provide structured advice
+      - safety_consideration: ["recovery", "form", "ready", "preparation"]

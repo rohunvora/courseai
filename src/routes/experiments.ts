@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { db } from '../db/index.js';
 import { authenticateUser } from '../middleware/auth.js';
+import { promptSelector } from '../services/prompt-selector.js';
 
 interface ExperimentStats {
   variantId: string;
@@ -176,6 +177,152 @@ const experimentsRoutes: FastifyPluginAsync = async (server) => {
       } catch (error) {
         server.log.error('Error recording experiment outcome:', error);
         return reply.code(500).send({ error: 'Failed to record outcome' });
+      }
+    }
+  });
+
+  // Kill-switch endpoints
+  server.post('/api/experiments/variants/:variantId/disable', {
+    preHandler: authenticateUser,
+    handler: async (request, reply) => {
+      try {
+        // Check if user is admin
+        const { userId } = request.user as any;
+        const userResult = await db.query(
+          'SELECT metadata FROM users WHERE id = $1',
+          [userId]
+        );
+        
+        if (!userResult.rows[0]?.metadata?.isAdmin) {
+          return reply.code(403).send({ error: 'Admin access required' });
+        }
+
+        const { variantId } = request.params as any;
+        
+        // Disable the variant
+        promptSelector.disableVariant(variantId);
+        
+        // Log the action
+        await db.query(
+          `INSERT INTO admin_actions (user_id, action, target, metadata, created_at)
+           VALUES ($1, $2, $3, $4::jsonb, NOW())`,
+          [
+            userId,
+            'disable_variant',
+            variantId,
+            JSON.stringify({ 
+              reason: request.body?.reason || 'Manual disable',
+              timestamp: new Date().toISOString()
+            })
+          ]
+        ).catch(err => {
+          // Don't fail if logging fails
+          server.log.error('Failed to log admin action:', err);
+        });
+        
+        return reply.send({ 
+          success: true,
+          variantId,
+          status: 'disabled',
+          disabledVariants: promptSelector.getDisabledVariants()
+        });
+      } catch (error) {
+        server.log.error('Error disabling variant:', error);
+        return reply.code(500).send({ error: 'Failed to disable variant' });
+      }
+    }
+  });
+
+  server.post('/api/experiments/variants/:variantId/enable', {
+    preHandler: authenticateUser,
+    handler: async (request, reply) => {
+      try {
+        // Check if user is admin
+        const { userId } = request.user as any;
+        const userResult = await db.query(
+          'SELECT metadata FROM users WHERE id = $1',
+          [userId]
+        );
+        
+        if (!userResult.rows[0]?.metadata?.isAdmin) {
+          return reply.code(403).send({ error: 'Admin access required' });
+        }
+
+        const { variantId } = request.params as any;
+        
+        // Enable the variant
+        promptSelector.enableVariant(variantId);
+        
+        // Log the action
+        await db.query(
+          `INSERT INTO admin_actions (user_id, action, target, metadata, created_at)
+           VALUES ($1, $2, $3, $4::jsonb, NOW())`,
+          [
+            userId,
+            're_enable_variant',
+            variantId,
+            JSON.stringify({ 
+              reason: request.body?.reason || 'Manual re-enable',
+              timestamp: new Date().toISOString()
+            })
+          ]
+        ).catch(err => {
+          server.log.error('Failed to log admin action:', err);
+        });
+        
+        return reply.send({ 
+          success: true,
+          variantId,
+          status: 'enabled',
+          disabledVariants: promptSelector.getDisabledVariants()
+        });
+      } catch (error) {
+        server.log.error('Error enabling variant:', error);
+        return reply.code(500).send({ error: 'Failed to enable variant' });
+      }
+    }
+  });
+
+  // Get current variant status
+  server.get('/api/experiments/variants/status', {
+    preHandler: authenticateUser,
+    handler: async (request, reply) => {
+      try {
+        // Check if user is admin
+        const { userId } = request.user as any;
+        const userResult = await db.query(
+          'SELECT metadata FROM users WHERE id = $1',
+          [userId]
+        );
+        
+        if (!userResult.rows[0]?.metadata?.isAdmin) {
+          return reply.code(403).send({ error: 'Admin access required' });
+        }
+
+        const disabledVariants = promptSelector.getDisabledVariants();
+        
+        // Get all known variants from database
+        const variantResult = await db.query(`
+          SELECT DISTINCT variant_id, COUNT(*) as usage_count
+          FROM prompt_experiments
+          GROUP BY variant_id
+          ORDER BY variant_id
+        `);
+        
+        const variants = variantResult.rows.map(row => ({
+          id: row.variant_id,
+          usageCount: parseInt(row.usage_count),
+          status: disabledVariants.includes(row.variant_id) ? 'disabled' : 'enabled'
+        }));
+        
+        return reply.send({
+          variants,
+          disabledVariants,
+          environmentVariable: process.env.PROMPT_VARIANT_DISABLED || ''
+        });
+      } catch (error) {
+        server.log.error('Error getting variant status:', error);
+        return reply.code(500).send({ error: 'Failed to get variant status' });
       }
     }
   });
