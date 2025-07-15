@@ -32,9 +32,15 @@ function App() {
         goals: ['build muscle', 'improve form']
       })
 
+      console.log('Course created:', data)
+      
+      if (!data.courseId) {
+        throw new Error('No courseId returned from create course')
+      }
+
       setCourseId(data.courseId)
       actionTracker.track('course_creation_success', {
-        courseId: data.data.id,
+        courseId: data.courseId,
         timestamp: new Date().toISOString(),
       })
     } catch (err) {
