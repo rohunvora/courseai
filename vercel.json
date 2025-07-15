@@ -1,6 +1,8 @@
 {
-  "rootDirectory": "frontend",
-  "framework": "vite",
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "cd frontend && npm install",
+  "framework": null,
   "build": {
     "env": {
       "VITE_ENABLE_PREVIEW_FEATURES": "true",
@@ -10,6 +12,5 @@
   },
   "env": {
     "VITE_ADMIN_TOKEN": "@admin_token"
-  },
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./"
+  }
 }
