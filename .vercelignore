@@ -1,11 +1,15 @@
-# Ignore backend files
-src/
-scripts/
-tests/
-.env
-.env.local
+# Ignore backend files (but not frontend/src)
+/src/
+/scripts/
+/tests/
+/.env
+/.env.local
 *.log
-node_modules/
-dist/
-package.json.backend
-package-lock.json.backend
+/node_modules/
+/dist/
+/package.json.backend
+/package-lock.json.backend
+/tsconfig.json
+/drizzle.config.ts
+/.eslintrc.json
+/jest.config.js
