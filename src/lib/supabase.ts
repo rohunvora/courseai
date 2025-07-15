@@ -1,13 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+import { config } from '../config/env.js';
 
 // Only create client if we have the required config
 let supabase: ReturnType<typeof createClient> | null = null;
 
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
+if (config.supabase.url && config.supabase.anonKey) {
+  supabase = createClient(config.supabase.url, config.supabase.anonKey);
 } else {
   console.warn('Supabase configuration missing. Authentication features will be disabled.');
 }

@@ -1,0 +1,53 @@
+
+> courseai-frontend@0.1.0 dev
+> vite
+
+
+  VITE v5.4.19  ready in 89 ms
+
+  ➜  Local:   http://localhost:3002/
+  ➜  Network: use --host to expose
+7:44:25 PM [vite] http proxy error: /api/actions/track
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+7:44:25 PM [vite] http proxy error: /api/actions/track
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+7:44:25 PM [vite] http proxy error: /api/courses
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+7:44:25 PM [vite] http proxy error: /api/actions/track
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+7:44:25 PM [vite] http proxy error: /api/courses
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+7:44:25 PM [vite] http proxy error: /api/actions/track
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+7:44:25 PM [vite] http proxy error: /api/actions/track
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+7:44:49 PM [vite] http proxy error: /api/actions/track
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+7:44:49 PM [vite] http proxy error: /api/courses
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+7:44:49 PM [vite] http proxy error: /api/actions/track
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+7:44:49 PM [vite] http proxy error: /api/actions/track
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)

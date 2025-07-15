@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import dotenv from 'dotenv';
+import { config } from './config/env.js';
 import { chatRoutes } from './routes/chat.js';
 import { chatRoutesWithTools } from './routes/chat-tools.js';
 import { courseRoutes } from './routes/courses.js';
@@ -9,14 +9,14 @@ import { authRoutes } from './routes/auth.js';
 import { demoRoutes } from './routes/demo.js';
 import { actionRoutes } from './routes/actions.js';
 import { monitorRoutes } from './routes/monitor.js';
+import { sessionRoutes } from './routes/sessions.js';
+import experimentsRoutes from './routes/experiments.js';
 import { actionLoggerMiddleware } from './middleware/actionLogger.js';
 import { logger } from './utils/logger.js';
 
-dotenv.config();
-
 const fastify = Fastify({
   logger: {
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+    level: config.server.nodeEnv === 'production' ? 'info' : 'debug',
   },
 });
 
@@ -63,7 +63,7 @@ const start = async () => {
     await fastify.register(authRoutes);
     
     // Use function calling if enabled
-    if (process.env.ENABLE_FUNCTION_CALLING === 'true') {
+    if (config.features.functionCalling) {
       await fastify.register(chatRoutesWithTools);
       console.log('✨ Function calling enabled for chat');
     } else {
@@ -72,8 +72,10 @@ const start = async () => {
     
     await fastify.register(courseRoutes);
     await fastify.register(progressRoutes);
+    await fastify.register(sessionRoutes);
     await fastify.register(actionRoutes);
     await fastify.register(monitorRoutes);
+    await fastify.register(experimentsRoutes);
     await fastify.register(demoRoutes);
 
     // Error handler
@@ -100,8 +102,8 @@ const start = async () => {
       });
     });
 
-    const port = parseInt(process.env.PORT || '3000');
-    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : (process.env.HOST || 'localhost');
+    const port = config.server.port;
+    const host = config.server.nodeEnv === 'production' ? '0.0.0.0' : 'localhost';
     
     await fastify.listen({ port, host });
     
@@ -115,7 +117,7 @@ const start = async () => {
     console.log(`🎯 Actions: http://${host}:${port}/api/actions/recent`);
     console.log('='.repeat(60));
     console.log('🔍 MONITORING: All user actions will be logged here');
-    console.log('✨ FUNCTION CALLING:', process.env.ENABLE_FUNCTION_CALLING === 'true' ? 'ENABLED' : 'DISABLED');
+    console.log('✨ FUNCTION CALLING:', config.features.functionCalling ? 'ENABLED' : 'DISABLED');
     console.log('='.repeat(60) + '\n');
   } catch (err) {
     fastify.log.error(err);

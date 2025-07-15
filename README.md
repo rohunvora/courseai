@@ -50,12 +50,16 @@ Copy `.env.template` to `.env` and fill in your API keys:
 - **Function Calling:** AI automatically logs workouts from conversation  
 - **Memory System:** Remembers your workouts and progress across sessions
 - **Smart Tools:** Update progress, get summaries, modify goals via natural language
+- **Safety First:** Built-in safeguards for proper progression and injury prevention
+- **A/B Testing:** Advanced prompt optimization with variant testing
 
 ### 📊 Progress Tracking  
 - **Auto-Logging:** "I did 3 sets of bench press at 135lbs" → automatically logged
+- **Smart Detection:** Only offers logging when specific metrics provided
 - **Progress Updates:** "Actually that was 145lbs" → automatically corrected
 - **Analytics:** "What's my best bench press?" → instant personal records
 - **Journal Drawer:** View 10 most recent workouts with details
+- **Personal Records:** Tracks PRs without emoji clutter in data
 
 ### 🎯 Course Management
 - **Course Creation:** Automatic strength training course setup
@@ -108,6 +112,12 @@ npm run smoke-test:full
 
 # Linting & type checking
 npm run lint && npm run type-check
+
+# Run prompt testing framework
+npm run test:prompts
+
+# Watch mode for prompt testing
+npm run test:prompts:watch
 ```
 
 ## 🚀 Deployment
@@ -238,7 +248,11 @@ src/
 ├── services/
 │   ├── openai-tools.ts # GPT-4o integration + function calling
 │   ├── tools.ts       # Tool functions (workout logging, progress updates)
-│   └── memory.ts      # Embedding pipeline & memory retrieval
+│   ├── memory.ts      # Embedding pipeline & memory retrieval
+│   ├── prompt-selector.ts # A/B testing variant selection
+│   └── model-selector.ts  # GPT-4o vs O3 decision logic
+├── config/
+│   └── prompts.ts     # Centralized prompt configuration
 └── index.ts           # Fastify server setup
 
 frontend/
@@ -256,6 +270,26 @@ frontend/
 - **AI:** OpenAI GPT-4o + Function Calling + Embeddings
 - **Frontend:** React + TypeScript + Vite
 - **Deployment:** Vercel (serverless functions)
+
+## 🔬 Advanced Features
+
+### Prompt Engineering & Safety
+- **10% Load Rule:** Never recommends >10% weekly weight increases
+- **Pain Response:** Immediate stop instructions for sharp pain
+- **Context Pruning:** Automatic memory optimization at 1500 tokens
+- **Personalization:** Adapts tone based on user experience level
+- **Fallback Support:** Manual logging template when tools disabled
+
+### A/B Testing Framework
+- **4 Variant Types:** Testing tone, memory, logging, and safety approaches
+- **User Segmentation:** Automatic categorization (beginner/intermediate/advanced)
+- **Metrics Tracking:** Tool accuracy, response specificity, safety compliance
+- **Statistical Analysis:** P-value comparison between variants
+
+### Model Selection (GPT-4o vs O3)
+- **GPT-4o:** Real-time chat, tool usage, complex reasoning
+- **O3-Mini:** Background tasks, summarization, cost optimization
+- **Auto-Fallback:** Switches to O3 on rate limits or errors
 
 ## Next Steps
 
@@ -277,10 +311,17 @@ frontend/
 - `npm run setup:database` - Setup Supabase database schema
 - `npm run check:database` - Check database tables and connection
 - `npm run test:connection` - Test Supabase connectivity
+- `npm run db:migrate` - Run database migrations
 
 ### Testing & Quality
 - `npm run test:smoke` - Run API smoke tests
+- `npm run test:prompts` - Run prompt variant testing
 - `npm run lint` - Run ESLint checks
 - `npm run type-check` - Run TypeScript type checking
+
+### Monitoring
+- `/api/experiments/results` - View A/B test results (admin only)
+- `/api/experiments/compare/:variantA/:variantB` - Statistical comparison
+- `/monitor/dashboard` - Action tracking dashboard
 
 The brain is ready! 🧠✨

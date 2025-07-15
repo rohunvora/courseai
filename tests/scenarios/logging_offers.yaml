@@ -1,0 +1,13 @@
+id: logging_offers
+context:
+  topic: "General Fitness"
+  currentWeek: 3
+  lastWorkoutDays: 2
+userMessages:
+  - "I did some yoga today"
+  - "It was about 30 minutes of flow"
+expect:
+  toolCalls:
+    - name: log_workout
+  checks:
+    - "30 minutes"

@@ -68,17 +68,19 @@ export const actionLogger = new ActionLogger();
 // Middleware to log HTTP requests
 export function actionLoggerMiddleware(request: FastifyRequest, reply: FastifyReply, done: () => void) {
   const startTime = Date.now();
+  const requestId = request.headers['x-request-id'] || `req-${Date.now()}`;
   
   // Log request
   actionLogger.logAction('http_request', {
     method: request.method,
     url: request.url,
     userAgent: request.headers['user-agent'],
-    requestId: request.headers['x-request-id'] || `req-${Date.now()}`,
+    requestId,
   }, request);
   
-  // Log response when done
-  reply.addHook('onSend', async (request, reply, payload) => {
+  // Override the reply.send method to log response
+  const originalSend = reply.send.bind(reply);
+  reply.send = function(payload: any) {
     const duration = Date.now() - startTime;
     
     actionLogger.logAction('http_response', {
@@ -86,11 +88,11 @@ export function actionLoggerMiddleware(request: FastifyRequest, reply: FastifyRe
       url: request.url,
       statusCode: reply.statusCode,
       duration: `${duration}ms`,
-      requestId: request.headers['x-request-id'] || `req-${Date.now()}`,
+      requestId,
     }, request);
     
-    return payload;
-  });
+    return originalSend(payload);
+  };
   
   done();
 }

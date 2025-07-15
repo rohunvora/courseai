@@ -1,0 +1,29 @@
+id: progress_check
+context:
+  topic: "Strength Training"
+  currentWeek: 8
+  lastWorkoutDays: 1
+  personalRecords:
+    - exercise: "Deadlift"
+      weight: "315"
+      unit: "lbs"
+      date: "2025-07-01"
+    - exercise: "Squat"
+      weight: "275"
+      unit: "lbs"
+      date: "2025-07-05"
+  recentWorkouts:
+    - exercise: "Deadlift"
+      sets: 3
+      reps: [5, 5, 5]
+      weight: "285 lbs"
+      timestamp: "2025-07-14T10:00:00Z"
+      totalVolume: 4275
+userMessages:
+  - "How's my deadlift progress looking?"
+expect:
+  toolCalls:
+    - name: get_progress_summary
+  checks:
+    - "315"
+    - "deadlift"

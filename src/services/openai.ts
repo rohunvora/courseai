@@ -1,16 +1,13 @@
 import OpenAI from 'openai';
+import { config } from '../config/env.js';
+import { buildBasicChatPrompt, buildCourseGeneratorPrompt } from '../config/prompts.js';
 
 export class OpenAIService {
   private client: OpenAI;
 
   constructor() {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
-    }
-    
     this.client = new OpenAI({
-      apiKey,
+      apiKey: config.openai.apiKey,
     });
   }
 
@@ -32,7 +29,7 @@ export class OpenAIService {
     ];
 
     const stream = await this.client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o',
+      model: config.openai.model,
       messages,
       stream: true,
       temperature: 0.7,
@@ -43,18 +40,7 @@ export class OpenAIService {
   }
 
   private buildSystemPrompt(context: { courseId: string; topic?: string; currentExercise?: any }): string {
-    return `You are an AI fitness and learning coach helping a user with their personalized course: "${context.topic || 'Unknown Course'}".
-
-Key responsibilities:
-1. Provide helpful, encouraging guidance
-2. Answer questions about form, technique, and progress
-3. Automatically detect when user mentions specific activities/exercises and note the details
-4. Keep responses conversational but informative
-5. If user reports pain or discomfort, prioritize safety and suggest form corrections
-
-Current context: ${context.currentExercise ? `User is working on ${context.currentExercise}` : 'General conversation'}
-
-Be supportive, knowledgeable, and safety-focused. Keep responses concise but helpful.`;
+    return buildBasicChatPrompt(context);
   }
 
   private async *extractTokens(stream: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>): AsyncIterable<string> {
@@ -67,37 +53,10 @@ Be supportive, knowledgeable, and safety-focused. Keep responses concise but hel
   }
 
   async generateCourseOutline(topic: string, level: string, goals?: string[]): Promise<any> {
-    const prompt = `Create a structured course outline for: "${topic}" at ${level} level.
-    
-Goals: ${goals?.join(', ') || 'General improvement'}
-
-Return a JSON object with this structure:
-{
-  "title": "Course Title",
-  "description": "Brief description",
-  "estimatedWeeks": 8,
-  "modules": [
-    {
-      "id": "module-1",
-      "title": "Module Title",
-      "description": "Module description",
-      "estimatedHours": 4,
-      "lessons": [
-        {
-          "id": "lesson-1",
-          "title": "Lesson Title",
-          "type": "lesson|practice|quiz",
-          "estimatedMinutes": 30
-        }
-      ]
-    }
-  ]
-}
-
-Make it practical and progressive.`;
+    const prompt = buildCourseGeneratorPrompt(topic, level, goals);
 
     const response = await this.client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o',
+      model: config.openai.model,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.5,
       response_format: { type: 'json_object' },
@@ -134,7 +93,7 @@ If no activity data is present, return null.`;
 
     try {
       const response = await this.client.chat.completions.create({
-        model: process.env.OPENAI_MODEL || 'gpt-4o',
+        model: config.openai.model,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
         response_format: { type: 'json_object' },

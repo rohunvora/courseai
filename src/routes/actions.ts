@@ -14,7 +14,7 @@ export async function actionRoutes(fastify: FastifyInstance) {
   // Track frontend actions
   fastify.post<{
     Body: z.infer<typeof ActionTrackSchema>;
-  }>('/actions/track', async (request, reply) => {
+  }>('/api/actions/track', async (request, reply) => {
     try {
       const validation = ActionTrackSchema.safeParse(request.body);
       if (!validation.success) {
@@ -45,7 +45,7 @@ export async function actionRoutes(fastify: FastifyInstance) {
   });
   
   // Get recent actions for debugging
-  fastify.get('/actions/recent', async (request, reply) => {
+  fastify.get('/api/actions/recent', async (request, reply) => {
     try {
       const actions = actionLogger.getRecentActions(50);
       return reply.send({
@@ -65,7 +65,7 @@ export async function actionRoutes(fastify: FastifyInstance) {
   // Get actions by session
   fastify.get<{
     Querystring: { sessionId: string };
-  }>('/actions/session/:sessionId', async (request, reply) => {
+  }>('/api/actions/session/:sessionId', async (request, reply) => {
     try {
       const { sessionId } = request.params as { sessionId: string };
       const actions = actionLogger.getActionsBySession(sessionId);
@@ -85,7 +85,7 @@ export async function actionRoutes(fastify: FastifyInstance) {
   });
   
   // Clear actions (for debugging)
-  fastify.delete('/actions/clear', async (request, reply) => {
+  fastify.delete('/api/actions/clear', async (request, reply) => {
     try {
       actionLogger.clearActions();
       console.log('\n🧹 ACTIONS CLEARED\n');

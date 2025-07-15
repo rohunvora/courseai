@@ -1,0 +1,28 @@
+id: bench_pr
+context:
+  topic: "Strength Training"
+  currentWeek: 5
+  lastWorkoutDays: 1
+  recentWorkouts:
+    - exercise: "Bench Press"
+      sets: 3
+      reps: [5, 5, 5]
+      weight: "175 lbs"
+      timestamp: "2025-07-14T10:00:00Z"
+      totalVolume: 2625
+  personalRecords:
+    - exercise: "Bench Press"
+      weight: "185"
+      unit: "lbs"
+      date: "2025-07-10"
+userMessages:
+  - "I just benched 3x5 at 185. Felt really solid!"
+  - "What's my bench PR now?"
+expect:
+  toolCalls:
+    - name: log_workout
+    - name: get_progress_summary
+  checks:
+    - "185"
+    - "personal record"
+    - "PR"

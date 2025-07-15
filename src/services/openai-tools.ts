@@ -1,5 +1,7 @@
 import OpenAI from 'openai';
 import { tools, executeTool } from './tools';
+import { config } from '../config/env.js';
+import { buildMainChatPrompt, selectPromptVariant, computeUserSegment, SAFETY_RULES } from '../config/prompts.js';
 
 export interface StreamWithTools {
   textStream: AsyncIterable<string>;
@@ -10,13 +12,8 @@ export class OpenAIServiceWithTools {
   private client: OpenAI;
 
   constructor() {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
-    }
-    
     this.client = new OpenAI({
-      apiKey,
+      apiKey: config.openai.apiKey,
     });
   }
 
@@ -42,7 +39,7 @@ export class OpenAIServiceWithTools {
     ];
 
     const stream = await this.client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o',
+      model: config.openai.model,
       messages,
       tools,
       tool_choice: 'auto',
@@ -142,43 +139,58 @@ export class OpenAIServiceWithTools {
   private buildSystemPrompt(context: any): string {
     const recentWorkouts = context.recentWorkouts || [];
     const personalRecords = context.personalRecords || [];
+    const memories = context.relevantMemories || [];
     
-    return `You are an AI fitness and learning coach helping a user with their personalized course: "${context.topic || 'Unknown Course'}".
-
-Key responsibilities:
-1. Provide helpful, encouraging guidance
-2. Answer questions about form, technique, and progress
-3. Use the log_workout function when users mention specific exercises with sets/reps/weights
-4. Use update_progress when users want to correct or modify previous workout entries
-5. Use get_progress_summary when users ask about their progress, personal records, or workout statistics
-6. Use update_course_goal when users want to change their goals, timeline, or training focus
-7. Keep responses conversational but informative
-8. If user reports pain or discomfort, prioritize safety and suggest form corrections
-9. When tools succeed, provide brief confirmation messages like "✅ Progress updated!" or "✅ Workout logged!"
-
-CAPABILITIES:
-- You can log workouts using the log_workout function when users mention exercises with specific sets, reps, and weights
-- Example: "I did 3 sets of bench press at 135 lbs for 10, 8, and 6 reps" should trigger log_workout
-- You can update previous entries using update_progress when users correct data
-- Example: "Actually that last set was 145 lbs, not 135" should trigger update_progress
-- You can get progress summaries using get_progress_summary for questions about statistics
-- Example: "What's my best bench press?" or "How much volume did I do this week?" should trigger get_progress_summary
-- You can update course goals using update_course_goal when users want to change focus or timeline
-- Example: "I want to focus more on endurance now" should trigger update_course_goal
-
-${recentWorkouts.length > 0 ? `
-RECENT WORKOUTS:
-${recentWorkouts.map((w: any) => `- ${w.exercise}: ${w.sets} sets, ${w.totalVolume} lbs total volume`).join('\n')}
-` : ''}
-
-${personalRecords.length > 0 ? `
-PERSONAL RECORDS:
-${personalRecords.map((pr: any) => `- ${pr.exercise}: ${pr.weight} ${pr.unit}`).join('\n')}
-` : ''}
-
-Current context: ${context.currentExercise ? `User is working on ${context.currentExercise}` : 'General conversation'}
-
-Be supportive, knowledgeable, and safety-focused. Keep responses concise but helpful. When users mention specific workout data, use the log_workout function to save it.`;
+    // Calculate days since last workout
+    const lastWorkoutDays = recentWorkouts.length > 0 
+      ? Math.floor((Date.now() - new Date(recentWorkouts[0].timestamp).getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+    
+    // Determine current training phase/week
+    const courseStartDate = context.courseStartDate;
+    const currentWeek = courseStartDate 
+      ? Math.ceil((Date.now() - new Date(courseStartDate).getTime()) / (1000 * 60 * 60 * 24 * 7))
+      : 1;
+    
+    // Get user segment and select prompt variant
+    const userSegment = computeUserSegment(context.user || {});
+    const variant = selectPromptVariant(context.userId, context.sessionId || 'default', userSegment);
+    
+    // Check for safety keywords in recent messages
+    const recentText = context.recentMessages?.map(m => m.content).join(' ').toLowerCase() || '';
+    const hasSafetyKeyword = ['pain', 'hurt', 'injury'].some(word => recentText.includes(word));
+    
+    // Apply contextual safety rules if needed
+    let additionalSafety = '';
+    if (hasSafetyKeyword && variant.safetyLevel === 'contextual') {
+      const keyword = ['pain', 'hurt', 'injury'].find(word => recentText.includes(word));
+      additionalSafety = SAFETY_RULES.contextual(keyword || '');
+    }
+    
+    const promptContext = {
+      topic: context.topic,
+      currentWeek,
+      lastWorkoutDays,
+      currentExercise: context.currentExercise,
+      personalRecords,
+      recentWorkouts,
+      memories
+    };
+    
+    let prompt = buildMainChatPrompt(promptContext, variant, userSegment);
+    
+    // Add additional safety context if needed
+    if (additionalSafety) {
+      prompt = prompt + '\n\nIMPORTANT: ' + additionalSafety;
+    }
+    
+    // Store variant info for analytics
+    if (context.sessionId) {
+      // This would be logged to analytics in production
+      console.log('Prompt variant selected:', variant.id, 'for segment:', userSegment.type);
+    }
+    
+    return prompt;
   }
 
   // Backward compatibility - non-streaming version with tools
@@ -195,7 +207,7 @@ Be supportive, knowledgeable, and safety-focused. Keep responses concise but hel
     ];
 
     const completion = await this.client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o',
+      model: config.openai.model,
       messages,
       tools,
       tool_choice: 'auto',

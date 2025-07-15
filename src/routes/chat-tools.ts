@@ -8,7 +8,7 @@ import { eq, desc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 let openai: OpenAIServiceWithTools;
-let memoryService = getMemoryService();
+let memoryService: ReturnType<typeof getMemoryService>;
 
 export async function chatRoutesWithTools(fastify: FastifyInstance) {
   // Stream chat endpoint with function calling
@@ -21,9 +21,12 @@ export async function chatRoutesWithTools(fastify: FastifyInstance) {
     const requestId = request.headers['x-request-id'] as string || uuidv4();
 
     try {
-      // Initialize OpenAI service if not already done
+      // Initialize services if not already done
       if (!openai) {
         openai = new OpenAIServiceWithTools();
+      }
+      if (!memoryService) {
+        memoryService = getMemoryService();
       }
 
       // Get course info
@@ -77,7 +80,7 @@ export async function chatRoutesWithTools(fastify: FastifyInstance) {
       // Save user message
       await db.insert(chatHistory).values({
         courseId,
-        sessionId,
+        sessionId: sessionId || null,
         messageType: 'user',
         content: message,
         context,
@@ -111,6 +114,9 @@ export async function chatRoutesWithTools(fastify: FastifyInstance) {
             recentMessages: enhancedMessageContext,
             currentExercise: context?.current_exercise,
             recentWorkouts: workoutContext,
+            relevantMemories,
+            courseStartDate: course.createdAt,
+            personalRecords: [], // TODO: Calculate from workouts
           });
 
           // Stream text tokens
@@ -124,6 +130,8 @@ export async function chatRoutesWithTools(fastify: FastifyInstance) {
             };
             
             reply.raw.write(`data: ${JSON.stringify(streamData)}\n\n`);
+            // Force flush to ensure immediate delivery
+            if (reply.raw.flush) reply.raw.flush();
           }
 
           // Wait for tool calls to complete
@@ -152,7 +160,7 @@ export async function chatRoutesWithTools(fastify: FastifyInstance) {
           // Save assistant response
           await db.insert(chatHistory).values({
             courseId,
-            sessionId,
+            sessionId: sessionId || null,
             messageType: 'assistant',
             content: assistantResponse,
             context: { toolCalls: toolResults },
@@ -190,6 +198,7 @@ export async function chatRoutesWithTools(fastify: FastifyInstance) {
           };
           
           reply.raw.write(`data: ${JSON.stringify(completeData)}\n\n`);
+          if (reply.raw.flush) reply.raw.flush();
           reply.raw.end();
 
         } catch {
@@ -198,6 +207,7 @@ export async function chatRoutesWithTools(fastify: FastifyInstance) {
             error: 'Failed to generate response',
           };
           reply.raw.write(`data: ${JSON.stringify(errorData)}\n\n`);
+          if (reply.raw.flush) reply.raw.flush();
           reply.raw.end();
         }
       } else {
@@ -210,6 +220,9 @@ export async function chatRoutesWithTools(fastify: FastifyInstance) {
           recentMessages: enhancedMessageContext,
           currentExercise: context?.current_exercise,
           recentWorkouts: workoutContext,
+          relevantMemories,
+          courseStartDate: course.createdAt,
+          personalRecords: [], // TODO: Calculate from workouts
         });
 
         // Include tool results in the response
@@ -234,7 +247,7 @@ export async function chatRoutesWithTools(fastify: FastifyInstance) {
         // Save assistant response
         await db.insert(chatHistory).values({
           courseId,
-          sessionId,
+          sessionId: sessionId || null,
           messageType: 'assistant',
           content: response,
           context: { toolCalls },

@@ -89,7 +89,7 @@ export default function Chat({ courseId }: ChatProps) {
         },
         body: JSON.stringify({
           message: userMessage.content,
-          sessionId,
+          ...(sessionId && { sessionId }),
           context: {}
         }),
       })
@@ -107,38 +107,54 @@ export default function Chat({ courseId }: ChatProps) {
       }
 
       let assistantContent = ''
+      let buffer = ''
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\\n')
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6))
-              
-              if (data.type === 'token' && data.content) {
-                assistantContent += data.content
+        const chunk = decoder.decode(value, { stream: true })
+        buffer += chunk
+        
+        // Split by double newline to get complete SSE messages
+        const parts = buffer.split('\n\n')
+        
+        // Keep the last part as it might be incomplete
+        buffer = parts.pop() || ''
+        
+        // Process complete messages
+        for (const part of parts) {
+          const lines = part.split('\n')
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const jsonStr = line.slice(6).trim()
+                if (jsonStr === '[DONE]') continue
                 
-                // Update the assistant message
-                setMessages(prev => 
-                  prev.map(msg => 
-                    msg.id === assistantMessageId 
-                      ? { ...msg, content: assistantContent }
-                      : msg
+                const data = JSON.parse(jsonStr)
+                
+                if (data.type === 'token' && data.content) {
+                  assistantContent += data.content
+                  
+                  // Update the assistant message
+                  setMessages(prev => 
+                    prev.map(msg => 
+                      msg.id === assistantMessageId 
+                        ? { ...msg, content: assistantContent }
+                        : msg
+                    )
                   )
-                )
-              } else if (data.type === 'complete') {
-                // Stream completed successfully
-              } else if (data.type === 'error') {
-                throw new Error(data.error || 'Stream error')
+                } else if (data.type === 'complete') {
+                  // Stream completed successfully
+                } else if (data.type === 'error') {
+                  throw new Error(data.error || 'Stream error')
+                }
+              } catch (parseError) {
+                // Only log if it's not an empty line or standard SSE comment
+                if (jsonStr && !jsonStr.startsWith(':')) {
+                  console.warn('Failed to parse SSE data:', parseError, 'Data:', jsonStr)
+                }
               }
-            } catch (parseError) {
-              // Ignore JSON parse errors for malformed chunks
-              console.warn('Failed to parse SSE data:', parseError)
             }
           }
         }

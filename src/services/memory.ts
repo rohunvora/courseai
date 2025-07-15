@@ -19,17 +19,13 @@ interface RelevantMemory {
 }
 
 export class MemoryService {
-  private client: OpenAI;
+  private client: OpenAI | null;
   private embeddingQueue: Map<string, MemoryEntry[]> = new Map();
   private processingInterval: NodeJS.Timeout | null = null;
   
   constructor() {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
-    }
-    
-    this.client = new OpenAI({ apiKey });
+    const { config } = require('../config/env.js');
+    this.client = new OpenAI({ apiKey: config.openai.apiKey });
     
     // Start batch processing every minute
     this.startBatchProcessing();
@@ -37,6 +33,11 @@ export class MemoryService {
   
   // Queue memory for embedding
   async queueMemory(userId: string, entry: MemoryEntry): Promise<void> {
+    if (!this.client) {
+      console.warn('Memory service disabled - skipping memory queue');
+      return;
+    }
+    
     const userQueue = this.embeddingQueue.get(userId) || [];
     userQueue.push(entry);
     this.embeddingQueue.set(userId, userQueue);
@@ -74,8 +75,9 @@ export class MemoryService {
         const texts = batch.map(entry => entry.content);
         
         // Generate embeddings
+        const { config } = require('../config/env.js');
         const response = await this.client.embeddings.create({
-          model: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
+          model: config.openai.embeddingModel,
           input: texts,
         });
         
@@ -85,7 +87,7 @@ export class MemoryService {
           courseId: entry.courseId,
           content: entry.content,
           embedding: response.data[index].embedding,
-          embeddingModel: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
+          embeddingModel: config.openai.embeddingModel,
           metadata: entry.metadata || {},
           importanceScore: entry.importanceScore || 1.0,
           redacted: false,
@@ -111,6 +113,11 @@ export class MemoryService {
       tokenBudget?: number;
     } = {}
   ): Promise<RelevantMemory[]> {
+    if (!this.client) {
+      console.warn('Memory service disabled - returning empty memories');
+      return [];
+    }
+    
     const { courseId, limit = 10, tokenBudget = 1500 } = options;
     
     try {
@@ -169,8 +176,13 @@ export class MemoryService {
   
   // Generate embedding for a single text
   private async generateEmbedding(text: string): Promise<number[]> {
+    if (!this.client) {
+      throw new Error('OpenAI client not initialized');
+    }
+    
+    const { config } = require('../config/env.js');
     const response = await this.client.embeddings.create({
-      model: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
+      model: config.openai.embeddingModel,
       input: text,
     });
     
