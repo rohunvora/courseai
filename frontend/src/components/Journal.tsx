@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { callEdgeFunction } from '../config/supabase'
 
 interface ProgressLog {
   id: string
@@ -29,20 +30,27 @@ export default function Journal({ courseId, isOpen, onClose }: JournalProps) {
     setError('')
     
     try {
-      // Get recent progress logs via our existing backend endpoint
-      const response = await fetch(`/api/progress/recent?courseId=${courseId}&limit=10`)
+      const data = await callEdgeFunction('getProgress', {
+        courseId,
+        limit: 10
+      })
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch progress logs')
-      }
+      // Transform the response to match expected format
+      const transformedLogs = data.logs.map((log: any) => ({
+        id: log.id,
+        activityType: log.exercise || log.type,
+        data: {
+          exercise: log.exercise,
+          sets: log.sets?.length || 0,
+          reps: log.sets?.map((s: any) => s.reps) || [],
+          weight: log.sets?.map((s: any) => s.weight) || [],
+          unit: log.sets?.[0]?.unit || 'lbs',
+          ...log.metadata
+        },
+        timestamp: new Date(`${log.date} ${log.time}`).toISOString()
+      }))
       
-      const data = await response.json()
-      
-      if (data.success) {
-        setLogs(data.logs || [])
-      } else {
-        throw new Error(data.error?.message || 'Failed to fetch logs')
-      }
+      setLogs(transformedLogs)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch logs')
       console.error('Error fetching progress logs:', err)

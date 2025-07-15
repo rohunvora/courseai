@@ -1,30 +1,21 @@
 # 🚀 PM Quick Start - CourseAI Testing
 
-## Option 1: Vercel Preview (Frontend Only)
+## Vercel Preview (Full Stack)
 
-Every PR gets a preview URL. Since the backend requires API keys and database access, we provide two options:
+Every PR gets a preview URL with full functionality! No backend setup required.
 
-### A. Use Staging Backend
-Your preview frontend will connect to our staging backend at:
-- API URL: `https://courseai-staging.herokuapp.com/api`
-- Demo accounts work automatically
+### How It Works
+- **Frontend**: Deployed to Vercel preview URL
+- **Backend**: Runs on Supabase Edge Functions (serverless)
+- **Database**: Uses Supabase PostgreSQL
+- **Demo Data**: Click "Reset & Seed Demo" button to populate
 
-### B. Run Backend Locally
-If you need to test backend changes:
-
-```bash
-# One-time setup
-git clone https://github.com/rohunvora/courseai
-cd courseai
-cp .env.template .env
-# Get API keys from team lead and add to .env
-
-# Start backend
-npm install
-npm run dev
-
-# Your preview frontend will connect to http://localhost:3001
-```
+### Testing Steps
+1. Open the Vercel preview URL from your PR
+2. Click "🌱 Reset & Seed Demo" button
+3. Use demo credentials:
+   - `demo@example.com` / `demo123` - Experienced user
+   - `test@example.com` / `test123` - Beginner user
 
 ## Option 2: Full Local Testing
 
@@ -42,17 +33,15 @@ npm run test:demo
 
 ## What is Supabase?
 
-Supabase provides our:
+Supabase provides our complete backend:
 - **Database**: PostgreSQL for storing user data, workouts, etc.
-- **Authentication**: User login/signup
+- **Authentication**: User login/signup (coming soon)
+- **Edge Functions**: Serverless API endpoints (replaces Fastify)
 - **File Storage**: Profile pictures, documents (future)
 
-Your Fastify backend connects to Supabase to:
-- Read/write user data
-- Verify authentication
-- Store workout logs
+Architecture: `Frontend → Supabase Edge Functions → Database`
 
-Think of it as: `Frontend → Backend (Fastify) → Database (Supabase)`
+No separate backend server needed!
 
 ## Testing Checklist
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { callEdgeFunction } from '../config/supabase';
 import './PreviewTools.css';
 
 interface PreviewToolsProps {
@@ -32,25 +33,12 @@ export default function PreviewTools({ onReset }: PreviewToolsProps) {
         throw new Error('Admin token required');
       }
 
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
-      const response = await fetch(`${apiUrl}/admin/seed-demo`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}`);
-      }
+      const data = await callEdgeFunction('seedDemo', {}, { adminToken });
 
       setSeedResult({
         success: true,
         message: 'Demo data seeded successfully!',
-        data: data.data
+        data: data
       });
 
       // Optionally reset the app after seeding

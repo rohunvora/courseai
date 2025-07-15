@@ -4,13 +4,12 @@
 
 ## 🧪 For Product Managers & Testers
 
-**Frontend previews deploy automatically!** Backend requires local setup:
+**Frontend previews deploy automatically with Supabase Edge Functions!**
 
-1. **Frontend Preview**: Every PR gets a Vercel preview URL
-2. **Backend Options**:
-   - Run locally: `npm run dev` (requires .env setup)
-   - Or use staging: Contact team for staging URL
-3. **Quick Start**: See [PM_QUICK_START.md](./PM_QUICK_START.md)
+1. **Frontend Preview**: Every PR gets a Vercel preview URL with full backend functionality
+2. **No Backend Setup Required**: Uses Supabase Edge Functions (serverless)
+3. **Demo Data**: Click "Reset & Seed Demo" button in preview to populate test data
+4. **Quick Start**: See [PM_QUICK_START.md](./PM_QUICK_START.md)
 
 **Full Testing** (includes backend):
 ```bash
@@ -145,28 +144,27 @@ npm run test:prompts:watch
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/courseai)
 
-**Manual Setup:**
+**Setup Steps:**
 1. **Fork this repo** and connect to Vercel
 2. **Set environment variables** in Vercel dashboard:
    ```
-   OPENAI_API_KEY=your-key
-   SUPABASE_URL=your-url  
-   SUPABASE_ANON_KEY=your-key
-   SUPABASE_SERVICE_ROLE_KEY=your-key
-   ENABLE_FUNCTION_CALLING=true
-   NODE_ENV=production
+   VITE_SUPABASE_URL=https://wwnbcnslkdupmuofqmey.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key
+   VITE_ADMIN_TOKEN=your-secure-admin-token
    ```
-3. **Deploy!** - Frontend and backend auto-configured
+3. **In Supabase Dashboard**, set Edge Function secrets:
+   ```
+   OPENAI_API_KEY=your-openai-key
+   ADMIN_TOKEN=your-secure-admin-token
+   ```
+4. **Deploy!** - Frontend connects directly to Supabase Edge Functions
 
-### Alternative Platforms
-- **Railway**: Auto-detects setup, just add environment variables
-- **Render**: Works with default build commands
-- **Heroku**: Compatible with Procfile included
-
-**Build Commands:**
-- Root: `npm run build` → builds both frontend and backend
-- Frontend: `npm run vercel-build` → optimized for Vercel
-- Backend: Auto-deployed as serverless function
+### Why Supabase Edge Functions?
+- **No separate backend hosting** - Everything runs on Supabase
+- **Auto-scaling** - Serverless functions scale with demand
+- **Global edge deployment** - Low latency worldwide
+- **Integrated auth & database** - Single platform for all services
+- **Cost effective** - Pay only for what you use
 
 ## Core Endpoints
 
@@ -255,32 +253,31 @@ curl -X POST http://localhost:3000/api/chat/your-course-id/message \
 ## 🏗️ Architecture
 
 ```
-src/
-├── db/
-│   ├── schema.ts      # Drizzle ORM schema (users, courses, progress_logs, user_memory, tool_calls)
-│   └── index.ts       # Database connection & exports
-├── routes/
-│   ├── chat-tools.ts  # Streaming chat with function calling
-│   ├── courses.ts     # Course management
-│   ├── progress.ts    # Progress tracking & recent logs
-│   └── auth.ts        # Authentication (Supabase)
-├── services/
-│   ├── openai-tools.ts # GPT-4o integration + function calling
-│   ├── tools.ts       # Tool functions (workout logging, progress updates)
-│   ├── memory.ts      # Embedding pipeline & memory retrieval
-│   ├── prompt-selector.ts # A/B testing variant selection
-│   └── model-selector.ts  # GPT-4o vs O3 decision logic
-├── config/
-│   └── prompts.ts     # Centralized prompt configuration
-└── index.ts           # Fastify server setup
+Supabase Edge Functions (Deno):
+├── chat-message       # Streaming chat with GPT-4o
+├── create-course      # Course creation
+├── create-session     # Session management
+├── get-progress       # Progress tracking & logs
+└── admin-seed-demo    # Demo data seeding
 
 frontend/
 ├── src/
 │   ├── components/
 │   │   ├── Chat.tsx   # Streaming chat interface
-│   │   └── Journal.tsx # Progress drawer with recent workouts
+│   │   ├── Journal.tsx # Progress drawer with recent workouts
+│   │   └── PreviewTools.tsx # Preview environment controls
+│   ├── config/
+│   │   └── supabase.ts # Edge Functions configuration
 │   └── App.tsx        # Main application
 └── vite.config.ts     # Build configuration
+
+Database (Supabase):
+├── users              # User profiles
+├── courses            # Training courses
+├── sessions           # Chat/workout sessions
+├── progress_logs      # Workout history
+├── user_memory        # AI memory embeddings
+└── tool_calls         # Function call tracking
 ```
 
 ### Key Technologies

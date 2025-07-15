@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { actionTracker } from '../utils/actionTracker'
+import { callEdgeFunction, EDGE_FUNCTIONS } from '../config/supabase'
 
 interface Message {
   id: string
@@ -33,20 +34,13 @@ export default function Chat({ courseId }: ChatProps) {
 
   const startSession = async () => {
     try {
-      const response = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseId,
-          sessionType: 'practice',
-          plannedDuration: 60
-        }),
+      const data = await callEdgeFunction('createSession', {
+        courseId,
+        sessionType: 'practice',
+        plannedDuration: 60
       })
-
-      const data = await response.json()
-      if (data.success) {
-        setSessionId(data.data.id)
-      }
+      
+      setSessionId(data.sessionId)
     } catch (error) {
       console.error('Failed to start session:', error)
     }
@@ -81,13 +75,14 @@ export default function Chat({ courseId }: ChatProps) {
     setMessages(prev => [...prev, assistantMessage])
 
     try {
-      const response = await fetch(`/api/chat/${courseId}/message`, {
+      const response = await fetch(EDGE_FUNCTIONS.chatMessage, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream',
         },
         body: JSON.stringify({
+          courseId,
           message: userMessage.content,
           ...(sessionId && { sessionId }),
           context: {}

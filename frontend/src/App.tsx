@@ -3,6 +3,7 @@ import Chat from './components/Chat'
 import Journal from './components/Journal'
 import PreviewTools from './components/PreviewTools'
 import { actionTracker } from './utils/actionTracker'
+import { callEdgeFunction } from './config/supabase'
 import './App.css'
 
 function App() {
@@ -25,23 +26,13 @@ function App() {
     })
 
     try {
-      const response = await fetch('/api/courses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: 'Strength Training for Beginners',
-          currentLevel: 'beginner',
-          goals: ['build muscle', 'improve form']
-        }),
+      const data = await callEdgeFunction('createCourse', {
+        topic: 'Strength Training for Beginners',
+        currentLevel: 'beginner',
+        goals: ['build muscle', 'improve form']
       })
 
-      const data = await response.json()
-
-      if (!data.success) {
-        throw new Error(data.error?.message || 'Failed to create course')
-      }
-
-      setCourseId(data.data.id)
+      setCourseId(data.courseId)
       actionTracker.track('course_creation_success', {
         courseId: data.data.id,
         timestamp: new Date().toISOString(),
