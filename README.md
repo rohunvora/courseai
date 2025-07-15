@@ -1,4 +1,4 @@
-# CourseAI - AI Fitness Coach
+# CourseAI - AI Fitness Coach 🏋️‍♂️
 
 **Complete AI-powered fitness coaching platform** with streaming chat, workout tracking, progress analytics, and intelligent memory system.
 
