@@ -100,17 +100,9 @@ class ActionTracker {
   }
   
   private async sendToBackend(actionData: FrontendAction) {
-    try {
-      await fetch('/api/actions/track', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(actionData),
-      });
-    } catch (error) {
-      console.warn('Failed to send action to backend:', error);
-    }
+    // TODO: Implement action tracking with Supabase
+    // For now, just log to console
+    return;
   }
   
   // Specific tracking methods for key app actions
