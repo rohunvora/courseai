@@ -1,0 +1,11 @@
+# Ignore backend files
+src/
+scripts/
+tests/
+.env
+.env.local
+*.log
+node_modules/
+dist/
+package.json.backend
+package-lock.json.backend
